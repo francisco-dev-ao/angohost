@@ -4,58 +4,62 @@ export interface EmailPlan {
   title: string;
   description: string;
   basePrice: number;
+  renewalPrice: number;
   features: { text: string; included: boolean; }[];
   popular?: boolean;
 }
 
 export const emailPlans: EmailPlan[] = [
   {
-    id: "basic",
-    title: "Email Básico",
-    description: "Para pequenas empresas e freelancers",
-    basePrice: 1500,
+    id: "premium",
+    title: "Email Premium",
+    description: "Para pequenas empresas e profissionais",
+    basePrice: 12000,
+    renewalPrice: 14500,
     features: [
-      { text: "5 GB de armazenamento", included: true },
-      { text: "Domínio personalizado", included: true },
-      { text: "Proteção contra spam", included: true },
+      { text: "5GB por usuário", included: true },
+      { text: "IMAP/POP", included: true },
+      { text: "Reputação do IP limpo", included: true },
+      { text: "Classificado pelo Google", included: true },
       { text: "Acesso webmail", included: true },
-      { text: "Suporte limitado", included: true },
-      { text: "Backup diário", included: false },
-      { text: "Calendário compartilhado", included: false },
-      { text: "Integração com aplicativos", included: false }
+      { text: "Suporte básico", included: true },
+      { text: "Anti-spam básico", included: true },
+      { text: "Calendário compartilhado", included: false }
     ]
   },
   {
     id: "business",
-    title: "Email Business",
+    title: "Business",
     description: "Para empresas em crescimento",
-    basePrice: 3000,
-    popular: true,
+    basePrice: 30000,
+    renewalPrice: 32000,
     features: [
-      { text: "15 GB de armazenamento", included: true },
-      { text: "Domínio personalizado", included: true },
-      { text: "Proteção contra spam", included: true },
+      { text: "30GB por usuário", included: true },
+      { text: "IMAP/POP", included: true },
+      { text: "Reputação do IP limpo", included: true },
+      { text: "Classificado pelo Google", included: true },
       { text: "Acesso webmail", included: true },
       { text: "Suporte prioritário", included: true },
-      { text: "Backup diário", included: true },
-      { text: "Calendário compartilhado", included: true },
-      { text: "Integração com aplicativos", included: false }
+      { text: "Anti-spam avançado", included: true },
+      { text: "Calendário compartilhado", included: true }
     ]
   },
   {
-    id: "enterprise",
-    title: "Email Enterprise",
+    id: "advanced",
+    title: "Avançado Pro",
     description: "Para grandes empresas",
-    basePrice: 5000,
+    basePrice: 40000,
+    renewalPrice: 42000,
+    popular: true,
     features: [
-      { text: "50 GB de armazenamento", included: true },
-      { text: "Domínio personalizado", included: true },
-      { text: "Proteção contra spam", included: true },
-      { text: "Acesso webmail", included: true },
+      { text: "50GB por usuário", included: true },
+      { text: "Regras de Encaminhamento", included: true },
+      { text: "Aliases de email", included: true },
+      { text: "Verificação Antivírus", included: true },
+      { text: "Anti-spam avançado", included: true },
+      { text: "Infraestrutura baseada na cloud", included: true },
       { text: "Suporte dedicado", included: true },
-      { text: "Backup diário", included: true },
-      { text: "Calendário compartilhado", included: true },
-      { text: "Integração com aplicativos", included: true }
+      { text: "Backup diário", included: true }
     ]
   }
 ];

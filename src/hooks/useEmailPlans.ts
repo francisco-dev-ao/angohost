@@ -11,7 +11,7 @@ export const useEmailPlans = () => {
   const { addToCart } = useCart();
   const { user } = useSupabaseAuth();
 
-  const [selectedTab, setSelectedTab] = useState("business");
+  const [selectedTab, setSelectedTab] = useState("advanced"); // Default to the popular plan
   const [userCount, setUserCount] = useState(1);
   const [period, setPeriod] = useState("1");
   const [selectedPlan, setSelectedPlan] = useState<any | null>(null);
@@ -28,9 +28,11 @@ export const useEmailPlans = () => {
     }
   };
 
-  const calculatePrice = (basePrice: number) => {
-    const emailPrice = basePrice * userCount * parseInt(period);
-    return emailPrice;
+  const calculateDiscountedPrice = (basePrice: number) => {
+    const years = parseInt(period);
+    // Apply 10% discount for multi-year purchases
+    const discountMultiplier = years > 1 ? 0.9 : 1;
+    return basePrice * userCount * years * discountMultiplier;
   };
 
   const handlePurchase = (plan: any) => {
@@ -56,14 +58,20 @@ export const useEmailPlans = () => {
 
     const years = parseInt(config.period);
     const items = [];
+    
+    // Apply 10% discount for multi-year purchases
+    const discountMultiplier = years > 1 ? 0.9 : 1;
+    const finalPrice = selectedPlan.basePrice * config.userCount * years * discountMultiplier;
 
     // Add email plan to cart
     items.push({
       id: `email-${selectedPlan.id}-${Date.now()}`,
       title: `${selectedPlan.title} (${config.userCount} ${config.userCount === 1 ? 'usuário' : 'usuários'} por ${years} ${years === 1 ? 'ano' : 'anos'})`,
       quantity: config.userCount,
-      price: selectedPlan.basePrice * config.userCount * years,
+      price: Math.round(finalPrice),
       basePrice: selectedPlan.basePrice,
+      renewalPrice: selectedPlan.renewalPrice,
+      period: years,
       type: "email"
     });
 
@@ -102,7 +110,7 @@ export const useEmailPlans = () => {
     setShowDialog,
     getPlanByType,
     handleUserCountChange,
-    calculatePrice,
+    calculateDiscountedPrice,
     handlePurchase,
     handleConfirmPurchase,
     emailPlans

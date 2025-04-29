@@ -28,7 +28,7 @@ const ProfessionalEmail = () => {
       <div className="container py-12">
         <h1 className="text-4xl font-bold text-center mb-4">Email Profissional</h1>
         <p className="text-lg text-center text-muted-foreground mb-12">
-          Soluções de email profissional para sua empresa com alto desempenho e segurança
+          Soluções de email profissional empresarial com alto desempenho e segurança
         </p>
         
         <EmailPlanConfigurator 

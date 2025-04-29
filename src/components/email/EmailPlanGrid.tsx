@@ -20,9 +20,27 @@ const EmailPlanGrid = ({
   period,
   handlePurchase,
 }: EmailPlanGridProps) => {
-  const calculatePrice = (basePrice: number) => {
-    const emailPrice = basePrice * userCount * parseInt(period);
-    return formatPrice(emailPrice);
+  const calculatePrice = (basePrice: number, renewalPrice: number) => {
+    const years = parseInt(period);
+    let totalPrice;
+    
+    // Apply 10% discount for 2-3 years
+    const discountMultiplier = years > 1 ? 0.9 : 1;
+    
+    // For the first purchase, use basePrice
+    totalPrice = basePrice * userCount * years * discountMultiplier;
+    
+    return formatPrice(Math.round(totalPrice));
+  };
+
+  const getRenewalPrice = (renewalPrice: number) => {
+    const years = parseInt(period);
+    
+    // Apply 10% discount for 2-3 years renewals
+    const discountMultiplier = years > 1 ? 0.9 : 1;
+    const totalRenewalPrice = renewalPrice * userCount * years * discountMultiplier;
+    
+    return formatPrice(Math.round(totalRenewalPrice));
   };
 
   return (
@@ -40,8 +58,16 @@ const EmailPlanGrid = ({
                 <p className="text-muted-foreground mt-2">{plan.description}</p>
                 
                 <div className="mt-4">
-                  <span className="text-3xl font-bold">{calculatePrice(plan.basePrice)}</span>
+                  <span className="text-3xl font-bold">{calculatePrice(plan.basePrice, plan.renewalPrice)}</span>
                   <span className="text-muted-foreground">/{userCount} {userCount === 1 ? 'usuário' : 'usuários'}/{period} {parseInt(period) === 1 ? 'ano' : 'anos'}</span>
+                  
+                  {parseInt(period) > 1 && (
+                    <div className="text-sm text-green-600 font-medium mt-1">10% de desconto aplicado</div>
+                  )}
+                </div>
+                
+                <div className="mt-2 text-sm text-muted-foreground">
+                  Renovação: {getRenewalPrice(plan.renewalPrice)}/{userCount} {userCount === 1 ? 'usuário' : 'usuários'}/{period} {parseInt(period) === 1 ? 'ano' : 'anos'}
                 </div>
               </div>
               

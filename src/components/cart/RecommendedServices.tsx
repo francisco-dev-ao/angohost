@@ -80,6 +80,13 @@ const RecommendedServices = ({
     }
   ];
 
+  // Apply discount for multi-year plans
+  const calculateEmailPrice = (basePrice: number) => {
+    const years = parseInt(selectedBillingPeriod);
+    const discountMultiplier = years > 1 ? 0.9 : 1;
+    return formatPrice(Math.round(basePrice * discountMultiplier));
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -104,8 +111,8 @@ const RecommendedServices = ({
                     <PricingCard
                       key={index}
                       {...plan}
-                      price={formatPrice(plan.basePrice)}
-                      period="usuário/ano"
+                      price={calculateEmailPrice(plan.basePrice)}
+                      period={`usuário/${selectedBillingPeriod} ${parseInt(selectedBillingPeriod) === 1 ? 'ano' : 'anos'}`}
                       ctaText="Configurar plano"
                       onAction={() => onEmailPlanClick(plan)}
                     />
