@@ -55,10 +55,6 @@ const OrderSummary = ({
               className="flex space-x-4"
             >
               <div className="flex items-center space-x-2">
-                <RadioGroupItem value="monthly" id="monthly" />
-                <Label htmlFor="monthly" className="cursor-pointer">Mensal</Label>
-              </div>
-              <div className="flex items-center space-x-2">
                 <RadioGroupItem value="annual" id="annual" />
                 <Label htmlFor="annual" className="cursor-pointer">Anual</Label>
               </div>
