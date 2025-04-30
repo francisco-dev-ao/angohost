@@ -14,11 +14,19 @@ interface QueryResult {
 
 // Get the API URL based on the environment
 const getApiBaseUrl = (): string => {
-  if (import.meta.env.MODE === 'development') {
-    return '/api'; // Uses Vite's proxy in development
+  // Verificar primeiro se há uma URL explícita fornecida via variável de ambiente
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
   }
-  // In production, use the environment variable or default to relative path
-  return import.meta.env.VITE_API_URL || '/api';
+
+  // Em desenvolvimento, usa o proxy do Vite
+  if (import.meta.env.DEV) {
+    return '/api';
+  }
+
+  // Em produção, usa o caminho relativo ou a URL base do site atual
+  const currentUrl = window.location.origin;
+  return `${currentUrl}/api`;
 };
 
 /**
@@ -26,19 +34,42 @@ const getApiBaseUrl = (): string => {
  */
 export const testDatabaseConnection = async (): Promise<QueryResult> => {
   try {
+    console.log('Testando conexão com o banco de dados usando URL:', getApiBaseUrl());
+    
     const response = await fetch(`${getApiBaseUrl()}/db/test-connection`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
+        'Accept': 'application/json'
       },
-      // In production, you might need credentials for cookies/auth
       credentials: 'include',
     });
     
+    // Log para debug
+    console.log('Status da resposta:', response.status);
+    
+    // Se não for 2xx, tratar como erro
     if (!response.ok) {
-      throw new Error(`HTTP error! Status: ${response.status}`);
+      const contentType = response.headers.get('content-type');
+      
+      // Se for HTML em vez de JSON (erro comum em servidores de produção)
+      if (contentType && contentType.includes('text/html')) {
+        const text = await response.text();
+        console.error('Recebido HTML em vez de JSON:', text.substring(0, 100) + '...');
+        throw new Error(`Erro do servidor (${response.status}): endpoint retornou HTML em vez de JSON`);
+      }
+      
+      // Tentar obter detalhes do erro no formato JSON
+      try {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Erro HTTP ${response.status}`);
+      } catch (jsonError) {
+        // Se não for possível analisar como JSON, usar mensagem padrão
+        throw new Error(`Erro HTTP! Status: ${response.status}`);
+      }
     }
     
+    // Processar resposta bem-sucedida
     const result = await response.json();
     return result;
   } catch (err: any) {
@@ -55,21 +86,45 @@ export const testDatabaseConnection = async (): Promise<QueryResult> => {
  */
 export const executeQuery = async (query: string, params?: any[]): Promise<QueryResult> => {
   try {
+    console.log('Executando consulta usando URL:', getApiBaseUrl());
+    console.log('Consulta:', query);
+    console.log('Parâmetros:', params);
+    
     const response = await fetch(`${getApiBaseUrl()}/db/execute-query`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        // Add authentication headers if needed
-        // 'Authorization': `Bearer ${getAuthToken()}`,
+        'Accept': 'application/json'
       },
       credentials: 'include',
       body: JSON.stringify({ query, params }),
     });
     
+    // Log para debug
+    console.log('Status da resposta:', response.status);
+    
+    // Se não for 2xx, tratar como erro
     if (!response.ok) {
-      throw new Error(`HTTP error! Status: ${response.status}`);
+      const contentType = response.headers.get('content-type');
+      
+      // Se for HTML em vez de JSON (erro comum em servidores de produção)
+      if (contentType && contentType.includes('text/html')) {
+        const text = await response.text();
+        console.error('Recebido HTML em vez de JSON:', text.substring(0, 100) + '...');
+        throw new Error(`Erro do servidor (${response.status}): endpoint retornou HTML em vez de JSON`);
+      }
+      
+      // Tentar obter detalhes do erro no formato JSON
+      try {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Erro HTTP ${response.status}`);
+      } catch (jsonError) {
+        // Se não for possível analisar como JSON, usar mensagem padrão
+        throw new Error(`Erro HTTP! Status: ${response.status}`);
+      }
     }
     
+    // Processar resposta bem-sucedida
     const result = await response.json();
     return result;
   } catch (err: any) {
@@ -81,15 +136,15 @@ export const executeQuery = async (query: string, params?: any[]): Promise<Query
   }
 };
 
-// Mock implementation for local development/testing
-if (import.meta.env.MODE === 'development' && typeof window !== 'undefined') {
-  console.log('Using database implementation for environment:', import.meta.env.MODE);
+// Implementação simulada para desenvolvimento local
+if (import.meta.env.DEV && typeof window !== 'undefined') {
+  console.log('Usando implementação de banco de dados para ambiente:', import.meta.env.MODE);
   
-  // Only use mocks if explicitly configured or if API is unavailable
+  // Usar mocks apenas se explicitamente configurado
   if (import.meta.env.VITE_USE_MOCK_DB === 'true') {
-    console.warn('Using mock database implementation for development');
+    console.warn('Usando implementação simulada de banco de dados para desenvolvimento');
     
-    // Mocks for testing UI without backend
+    // Mocks para testar UI sem backend
     (window as any).__mockDbResponses = {
       testConnection: { 
         success: true, 
