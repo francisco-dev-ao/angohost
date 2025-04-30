@@ -12,7 +12,7 @@ export default defineConfig(({ mode }) => ({
     proxy: {
       // Proxy API requests to your backend server
       '/api': {
-        target: 'http://localhost:3000', // Change to your actual backend URL
+        target: process.env.VITE_API_URL || 'http://localhost:3000',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, '')
       }
@@ -29,6 +29,7 @@ export default defineConfig(({ mode }) => ({
     },
   },
   build: {
+    sourcemap: mode !== 'production',
     rollupOptions: {
       // Explicitly externalize problematic Node.js modules
       external: [
@@ -37,5 +38,10 @@ export default defineConfig(({ mode }) => ({
         'cloudflare:sockets'
       ]
     }
+  },
+  define: {
+    // Make environment variables available in the app
+    'import.meta.env.VITE_API_URL': JSON.stringify(process.env.VITE_API_URL),
+    'import.meta.env.VITE_USE_MOCK_DB': JSON.stringify(process.env.VITE_USE_MOCK_DB),
   }
 }));

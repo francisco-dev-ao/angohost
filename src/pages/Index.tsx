@@ -14,46 +14,54 @@ import { testDatabaseConnection } from "@/utils/database";
 import { toast } from "sonner";
 
 const Index = () => {
-  const [dbConnectionStatus, setDbConnectionStatus] = useState<{success?: boolean, message?: string}>({});
+  const [dbConnectionStatus, setDbConnectionStatus] = useState<{success?: boolean, message?: string, loading?: boolean}>({
+    loading: true
+  });
   
   useEffect(() => {
-    // Testar a conexão com o banco de dados ao carregar a página
+    // Test the database connection when the page loads
     const checkDbConnection = async () => {
       try {
-        // In development mode, we use mock data if it's available
-        if (process.env.NODE_ENV === 'development' && 
+        setDbConnectionStatus(prev => ({ ...prev, loading: true }));
+        
+        // In development mode with mock enabled, use mock data if available
+        if (import.meta.env.MODE === 'development' && 
+            import.meta.env.VITE_USE_MOCK_DB === 'true' && 
             typeof window !== 'undefined' && 
             (window as any).__mockDbResponses) {
           const mockResult = (window as any).__mockDbResponses.testConnection;
           setDbConnectionStatus({
             success: mockResult.success,
-            message: mockResult.message
+            message: mockResult.message,
+            loading: false
           });
           toast.success(mockResult.message);
           return;
         }
 
+        // Attempt real database connection via API
         const result = await testDatabaseConnection();
+        
+        setDbConnectionStatus({
+          success: result.success,
+          message: result.success 
+            ? "Conectado ao banco de dados com sucesso!" 
+            : `Erro na conexão: ${result.error}`,
+          loading: false
+        });
+        
+        // Show appropriate notification
         if (result.success) {
-          setDbConnectionStatus({
-            success: true,
-            message: "Conectado ao banco de dados com sucesso!"
-          });
-          // Mostrar notificação de sucesso
           toast.success("Conectado ao banco de dados PostgreSQL com sucesso!");
         } else {
-          setDbConnectionStatus({
-            success: false,
-            message: `Erro na conexão: ${result.error}`
-          });
-          // Mostrar notificação de erro
           toast.error(`Falha na conexão com o banco de dados: ${result.error}`);
         }
       } catch (err: any) {
         console.error("Erro ao testar conexão:", err);
         setDbConnectionStatus({
           success: false,
-          message: `Exceção: ${err.message}`
+          message: `Exceção: ${err.message}`,
+          loading: false
         });
         toast.error(`Erro ao tentar conectar: ${err.message}`);
       }

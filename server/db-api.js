@@ -4,26 +4,41 @@
  * You would need to run this separately from your Vite app
  * 
  * To use this:
- * 1. Install Express: npm install express cors pg
- * 2. Run with: node server/db-api.js
+ * 1. Install Express: npm install express cors pg dotenv
+ * 2. Create a .env file with your database credentials
+ * 3. Run with: node server/db-api.js
  */
 
 const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
+const dotenv = require('dotenv');
+
+// Load environment variables
+dotenv.config();
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Database connection pool
+// Get database configuration from environment variables
 const pool = new Pool({
-  host: 'emhtcellotyoasg.clouds2africa.com',
-  port: 1874,
-  user: 'postgres',
-  password: 'Bayathu60@@',
-  database: 'appdb',
-  ssl: false // Set to true if your database requires SSL
+  host: process.env.DB_HOST || 'emhtcellotyoasg.clouds2africa.com',
+  port: parseInt(process.env.DB_PORT || '1874'),
+  user: process.env.DB_USER || 'postgres',
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME || 'appdb',
+  ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
+  // In production, you should use a proper SSL configuration
+  // ssl: {
+  //   rejectUnauthorized: false,
+  //   ca: fs.readFileSync('/path/to/server-ca.pem').toString(),
+  //   key: fs.readFileSync('/path/to/client-key.pem').toString(),
+  //   cert: fs.readFileSync('/path/to/client-cert.pem').toString(),
+  // },
+  max: 20, // Connection pool size
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 2000,
 });
 
 // Test connection endpoint
@@ -49,7 +64,7 @@ app.get('/db/test-connection', async (req, res) => {
   }
 });
 
-// Execute query endpoint
+// Execute query endpoint with security enhancements
 app.post('/db/execute-query', async (req, res) => {
   const { query, params } = req.body;
   
@@ -58,6 +73,17 @@ app.post('/db/execute-query', async (req, res) => {
     return res.status(400).json({ 
       success: false, 
       error: 'Query não fornecida'
+    });
+  }
+  
+  // Prevent dangerous operations
+  const lowerQuery = query.toLowerCase();
+  if (lowerQuery.includes('drop ') || 
+      lowerQuery.includes('truncate ') ||
+      lowerQuery.includes('delete ') && !lowerQuery.includes('where')) {
+    return res.status(403).json({
+      success: false,
+      error: 'Operação não permitida por razões de segurança'
     });
   }
   
@@ -80,6 +106,14 @@ app.post('/db/execute-query', async (req, res) => {
       error: err.message
     });
   }
+});
+
+// Process graceful shutdown
+process.on('SIGINT', () => {
+  pool.end().then(() => {
+    console.log('Pool de conexões do banco de dados encerrado');
+    process.exit(0);
+  });
 });
 
 const PORT = process.env.PORT || 3000;
