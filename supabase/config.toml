@@ -1,1 +1,8 @@
+
 project_id = "izkmemlswyvvvupcnpxs"
+
+[functions.test-db-connection]
+verify_jwt = false
+
+[functions.execute-query]
+verify_jwt = true
