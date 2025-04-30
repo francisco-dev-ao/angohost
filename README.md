@@ -1,73 +1,57 @@
-# Welcome to your Lovable project
 
-## Project info
+# AngoHost - Web Hosting Service Application
 
-**URL**: https://lovable.dev/projects/f29bdce5-685e-4f9a-ab0b-02d9a0d51891
+## Database Connection
 
-## How can I edit this code?
+This application connects to a PostgreSQL database with the following configuration:
 
-There are several ways of editing your application.
+- **Host:** emhtcellotyoasg.clouds2africa.com
+- **Port:** 1874
+- **User:** postgres
+- **Database:** appdb
 
-**Use Lovable**
+## Development Setup
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/f29bdce5-685e-4f9a-ab0b-02d9a0d51891) and start prompting.
+### Frontend
 
-Changes made via Lovable will be committed automatically to this repo.
+1. Install dependencies:
+```
+npm install
+```
 
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+2. Run the development server:
+```
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+### Backend API (Required for Database Access)
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+The application uses a separate Node.js backend for database operations:
 
-**Use GitHub Codespaces**
+1. Navigate to the server directory:
+```
+cd server
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+2. Install server dependencies:
+```
+npm install express cors pg
+```
 
-## What technologies are used for this project?
+3. Start the API server:
+```
+node db-api.js
+```
 
-This project is built with:
+The frontend will proxy API calls to the backend server during development.
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## Building for Production
 
-## How can I deploy this project?
+```
+npm run build
+```
 
-Simply open [Lovable](https://lovable.dev/projects/f29bdce5-685e-4f9a-ab0b-02d9a0d51891) and click on Share -> Publish.
+## Important Notes
 
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+- Database connections are made via the backend API, not directly from the browser
+- In development mode, mock database responses are used if the API is not running

@@ -20,6 +20,19 @@ const Index = () => {
     // Testar a conexão com o banco de dados ao carregar a página
     const checkDbConnection = async () => {
       try {
+        // In development mode, we use mock data if it's available
+        if (process.env.NODE_ENV === 'development' && 
+            typeof window !== 'undefined' && 
+            (window as any).__mockDbResponses) {
+          const mockResult = (window as any).__mockDbResponses.testConnection;
+          setDbConnectionStatus({
+            success: mockResult.success,
+            message: mockResult.message
+          });
+          toast.success(mockResult.message);
+          return;
+        }
+
         const result = await testDatabaseConnection();
         if (result.success) {
           setDbConnectionStatus({
@@ -36,7 +49,7 @@ const Index = () => {
           // Mostrar notificação de erro
           toast.error(`Falha na conexão com o banco de dados: ${result.error}`);
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error("Erro ao testar conexão:", err);
         setDbConnectionStatus({
           success: false,
