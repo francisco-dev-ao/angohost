@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { executeQuery } from '@/utils/database';
 import { mapSupabaseOrderToOrder } from '@/utils/adminMappers';
 import { Order } from '@/types/admin';
 
@@ -9,16 +9,14 @@ export const useAdminOrders = () => {
 
   const fetchRecentOrders = async (): Promise<Order[]> => {
     try {
-      const { data: ordersData, error: ordersError } = await supabase
-        .from('orders')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(5);
+      const { success, data, error } = await executeQuery(
+        'SELECT * FROM orders ORDER BY created_at DESC LIMIT 5'
+      );
         
-      if (ordersError) throw ordersError;
+      if (!success) throw new Error(error);
       
-      return ordersData ? 
-        ordersData.map((order: any) => mapSupabaseOrderToOrder(order)) 
+      return data ? 
+        data.map((order: any) => mapSupabaseOrderToOrder(order)) 
         : [];
     } catch (error) {
       console.error('Error fetching recent orders:', error);
@@ -28,31 +26,31 @@ export const useAdminOrders = () => {
   
   const fetchOrderCounts = async () => {
     try {
-      const { count: pendingOrders, error: pendingOrdersError } = await supabase
-        .from('orders')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'pending');
+      const pendingResult = await executeQuery(
+        'SELECT COUNT(*) as count FROM orders WHERE status = $1',
+        ['pending']
+      );
       
-      if (pendingOrdersError) throw pendingOrdersError;
+      if (!pendingResult.success) throw new Error(pendingResult.error);
       
-      const { count: activeOrders, error: activeOrdersError } = await supabase
-        .from('orders')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'processing');
+      const activeResult = await executeQuery(
+        'SELECT COUNT(*) as count FROM orders WHERE status = $1',
+        ['processing']
+      );
       
-      if (activeOrdersError) throw activeOrdersError;
+      if (!activeResult.success) throw new Error(activeResult.error);
       
-      const { count: completedOrders, error: completedOrdersError } = await supabase
-        .from('orders')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'completed');
+      const completedResult = await executeQuery(
+        'SELECT COUNT(*) as count FROM orders WHERE status = $1',
+        ['completed']
+      );
       
-      if (completedOrdersError) throw completedOrdersError;
+      if (!completedResult.success) throw new Error(completedResult.error);
       
       return {
-        pendingOrders: pendingOrders || 0,
-        activeOrders: activeOrders || 0,
-        completedOrders: completedOrders || 0
+        pendingOrders: parseInt(pendingResult.data[0]?.count || '0'),
+        activeOrders: parseInt(activeResult.data[0]?.count || '0'),
+        completedOrders: parseInt(completedResult.data[0]?.count || '0')
       };
     } catch (error) {
       console.error('Error fetching order counts:', error);

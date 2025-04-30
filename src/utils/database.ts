@@ -1,44 +1,56 @@
 
-import { supabase } from '@/integrations/supabase/client';
+import { Pool } from 'pg';
+
+// Configuração do pool de conexão com o PostgreSQL
+const pool = new Pool({
+  host: 'emhtcellotyoasg.clouds2africa.com',
+  port: 1874,
+  user: 'postgres',
+  password: 'Bayathu60@@',
+  database: 'appdb',
+  ssl: false // Altere para true se seu banco de dados exigir SSL
+});
 
 /**
  * Função utilitária para testar a conexão com o banco de dados PostgreSQL
- * usando a edge function do Supabase
  */
 export const testDatabaseConnection = async () => {
   try {
-    const { data, error } = await supabase.functions.invoke('test-db-connection');
-    
-    if (error) {
-      console.error('Erro ao testar conexão com o banco de dados:', error);
-      return { success: false, error: error.message };
+    const client = await pool.connect();
+    try {
+      const result = await client.query('SELECT 1 as connected');
+      return { 
+        success: true, 
+        data: result.rows[0],
+        message: "Conexão com o banco de dados bem-sucedida!" 
+      };
+    } finally {
+      client.release();
     }
-    
-    return { success: true, data };
   } catch (err) {
-    console.error('Exceção ao testar conexão com o banco de dados:', err);
+    console.error('Erro ao testar conexão com o banco de dados:', err);
     return { success: false, error: err.message };
   }
 };
 
 /**
  * Função para executar consultas SQL personalizadas
- * Observação: Esta função depende da edge function que usa a variável DATABASE_URL
  */
 export const executeQuery = async (query: string, params?: any[]) => {
   try {
-    const { data, error } = await supabase.functions.invoke('execute-query', {
-      body: { query, params },
-    });
-    
-    if (error) {
-      console.error('Erro ao executar consulta:', error);
-      return { success: false, error: error.message };
+    const client = await pool.connect();
+    try {
+      const result = await client.query(query, params);
+      return { 
+        success: true, 
+        data: result.rows,
+        rowCount: result.rowCount 
+      };
+    } finally {
+      client.release();
     }
-    
-    return { success: true, data };
   } catch (err) {
-    console.error('Exceção ao executar consulta:', err);
+    console.error('Erro ao executar consulta:', err);
     return { success: false, error: err.message };
   }
 };
