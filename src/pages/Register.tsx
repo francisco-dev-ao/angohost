@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { toast } from 'sonner';
@@ -9,7 +9,7 @@ import { LoginForm } from '@/components/auth/LoginForm';
 import { RegisterForm } from '@/components/auth/RegisterForm';
 
 export default function Register() {
-  const [tab, setTab] = useState('login');
+  const [tab, setTab] = useState('register');
   const location = useLocation();
   const returnUrl = location.state?.returnUrl || '/client';
   const [isLoggingIn, setIsLoggingIn] = useState(false);
@@ -56,7 +56,7 @@ export default function Register() {
   const loginTitle = "Acesse a sua conta";
   const loginSubtitle = "Bem-vindo de volta! Por favor, insira seus detalhes.";
   const registerTitle = "Criar nova conta";
-  const registerSubtitle = "Por favor, insira seus dados para criar uma conta.";
+  const registerSubtitle = "Por favor, insira seus dados";
 
   return (
     <AuthLayout 
@@ -71,10 +71,28 @@ export default function Register() {
         
         <TabsContent value="login">
           <LoginForm onSubmit={handleLogin} isLoading={isLoggingIn} />
+          
+          <div className="mt-6">
+            <button 
+              onClick={() => setTab('register')} 
+              className="w-full bg-amber-500 hover:bg-amber-600 text-white py-3 px-4 rounded-xl text-sm"
+            >
+              Criar nova conta
+            </button>
+          </div>
         </TabsContent>
         
         <TabsContent value="register">
           <RegisterForm onSubmit={handleRegister} isLoading={isRegistering} />
+          
+          <div className="mt-6">
+            <button 
+              onClick={() => setTab('login')} 
+              className="w-full bg-amber-500 hover:bg-amber-600 text-white py-3 px-4 rounded-xl text-sm"
+            >
+              Entrar na minha conta
+            </button>
+          </div>
         </TabsContent>
       </Tabs>
     </AuthLayout>
