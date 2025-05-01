@@ -15,10 +15,12 @@ import PaymentOptionsSection from './form/PaymentOptionsSection';
 import EmptyCartNotice from './form/EmptyCartNotice';
 
 interface CheckoutFormProps {
+  onSubmit?: (formData: any) => void; // Added onSubmit as an optional prop
   onComplete?: (orderId: string) => void;
+  loading?: boolean; // Added loading as an optional prop
 }
 
-const CheckoutForm = ({ onComplete }: CheckoutFormProps) => {
+const CheckoutForm = ({ onSubmit, onComplete, loading: externalLoading }: CheckoutFormProps) => {
   const navigate = useNavigate();
   const { user } = useSupabaseAuth();
   const { items } = useCart();
@@ -47,6 +49,20 @@ const CheckoutForm = ({ onComplete }: CheckoutFormProps) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // If external onSubmit is provided, use it
+    if (onSubmit) {
+      onSubmit({
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        address: formData.address,
+        paymentMethod: selectedPaymentMethod,
+        contactProfileId: selectedContactProfile,
+        skipPayment: skipPayment
+      });
+      return;
+    }
     
     if (!user) {
       toast.error('Você precisa estar logado para finalizar a compra');
@@ -117,7 +133,7 @@ const CheckoutForm = ({ onComplete }: CheckoutFormProps) => {
           loading={loading}
           skipPayment={skipPayment}
           setSkipPayment={setSkipPayment}
-          isSaving={isSaving}
+          isSaving={isSaving || !!externalLoading}
         />
       </div>
     </form>

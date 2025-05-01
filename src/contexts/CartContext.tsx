@@ -28,6 +28,7 @@ interface CartContextType {
   isLoading?: boolean;
   error?: Error | null;
   isAuthenticated: boolean;
+  total: number; // Added this property
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -35,6 +36,9 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 export const CartProvider = ({ children }: { children: React.ReactNode }) => {
   const { user } = useSupabaseAuth();
   const { items, isLoading, error, addToCart, removeFromCart, clearCart, updateItemPrice } = useCartData();
+  
+  // Calculate total from items
+  const total = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
   return (
     <CartContext.Provider 
@@ -46,7 +50,8 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
         updateItemPrice,
         isLoading,
         error,
-        isAuthenticated: !!user
+        isAuthenticated: !!user,
+        total // Added total to the provider value
       }}
     >
       {children}

@@ -11,7 +11,7 @@ import OrderSummary from './OrderSummary';
 import CheckoutForm from './CheckoutForm';
 
 const EnhancedCheckout = () => {
-  const { items, total, clearCart } = useCart();
+  const { items, total } = useCart();
   const { user, signIn } = useSupabaseAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -20,12 +20,22 @@ const EnhancedCheckout = () => {
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedBillingPeriod, setSelectedBillingPeriod] = useState('1');
+
+  // Calculated values for OrderSummary
+  const subtotal = total;
+  const discount = 0; // You can implement discount logic if needed
 
   useEffect(() => {
     if (items.length === 0 && !orderPlaced) {
       navigate('/');
     }
   }, [items, navigate, orderPlaced]);
+
+  const handleBillingPeriodChange = (period: string) => {
+    setSelectedBillingPeriod(period);
+    // Additional logic for billing period change if needed
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -86,7 +96,6 @@ const EnhancedCheckout = () => {
 
       // Clear cart and show success message
       setOrderPlaced(true);
-      clearCart();
       toast.success('Pedido realizado com sucesso!');
       
       // Redirect to order confirmation
@@ -187,7 +196,14 @@ const EnhancedCheckout = () => {
           )}
         </div>
         <div>
-          <OrderSummary items={items} total={total} />
+          <OrderSummary 
+            items={items} 
+            subtotal={subtotal} 
+            discount={discount} 
+            total={total} 
+            billingCycle={selectedBillingPeriod}
+            handleBillingCycleChange={handleBillingPeriodChange}
+          />
         </div>
       </div>
     </div>
