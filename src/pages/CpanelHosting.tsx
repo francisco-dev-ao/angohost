@@ -1,53 +1,66 @@
+
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout";
 import PricingCard from "@/components/PricingCard";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Check } from "lucide-react";
 import { formatPrice } from "@/utils/formatters";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "sonner";
+import { useCart } from "@/contexts/CartContext";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
 
 const CpanelHosting = () => {
   const [billingYears, setBillingYears] = useState("1");
+  const [selectedPlan, setSelectedPlan] = useState<any>(null);
+  const [showDialog, setShowDialog] = useState(false);
+  const [dialogTab, setDialogTab] = useState("register");
+  const [domainName, setDomainName] = useState("");
   
+  const navigate = useNavigate();
+  const { addToCart } = useCart();
+  
+  // New pricing structure based on angohost.ao
   const hostingPlans = [
     {
       title: "Iniciante",
       description: "Ideal para sites pessoais e blogs",
-      price: formatPrice(14900),
-      period: "mês",
+      basePrice: 9900,
       features: [
         { text: "1 Site", included: true },
         { text: "10GB SSD", included: true },
-        { text: "50GB Tráfego", included: true },
+        { text: "Tráfego Ilimitado", included: true },
         { text: "5 Contas de Email", included: true },
         { text: "Certificado SSL", included: true },
-        { text: "Backup Diário", included: false },
-        { text: "CDN Cloudflare", included: false },
-        { text: "Migração Gratuita", included: false },
+        { text: "Painel cPanel", included: true },
+        { text: "Backup Semanal", included: true },
+        { text: "Suporte 24/7", included: true },
       ],
     },
     {
-      title: "Business",
+      title: "Empresarial",
       description: "Perfeito para pequenos negócios",
-      price: formatPrice(29900),
+      basePrice: 15900,
       period: "mês",
       popular: true,
       features: [
         { text: "10 Sites", included: true },
-        { text: "50GB SSD", included: true },
-        { text: "200GB Tráfego", included: true },
-        { text: "20 Contas de Email", included: true },
+        { text: "30GB SSD", included: true },
+        { text: "Tráfego Ilimitado", included: true },
+        { text: "30 Contas de Email", included: true },
         { text: "Certificado SSL", included: true },
+        { text: "Painel cPanel", included: true },
         { text: "Backup Diário", included: true },
-        { text: "CDN Cloudflare", included: true },
-        { text: "Migração Gratuita", included: true },
+        { text: "Suporte 24/7", included: true },
       ],
     },
     {
       title: "Profissional",
       description: "Para médias e grandes empresas",
-      price: formatPrice(59900),
+      basePrice: 28900,
       period: "mês",
       features: [
         { text: "Sites Ilimitados", included: true },
@@ -55,18 +68,81 @@ const CpanelHosting = () => {
         { text: "Tráfego Ilimitado", included: true },
         { text: "100 Contas de Email", included: true },
         { text: "Certificado SSL", included: true },
+        { text: "Painel cPanel", included: true },
         { text: "Backup Diário", included: true },
-        { text: "CDN Cloudflare", included: true },
-        { text: "Migração Gratuita", included: true },
+        { text: "Suporte 24/7 Premium", included: true },
       ],
     },
   ];
 
+  // Calculate price with multi-year discounts
+  const calculateYearlyPrice = (basePrice: number, years: number) => {
+    // Apply discount for multi-year plans (5% per additional year)
+    let discount = 0;
+    if (years > 1) {
+      discount = (years - 1) * 0.05;
+    }
+    return Math.round(basePrice * years * (1 - discount));
+  };
+
   const yearlyHostingPlans = hostingPlans.map(plan => ({
     ...plan,
-    price: formatPrice(Number(plan.price.replace(/[^\d]/g, '')) * parseInt(billingYears)),
+    price: formatPrice(calculateYearlyPrice(plan.basePrice, parseInt(billingYears))),
     period: `${billingYears} ${parseInt(billingYears) === 1 ? 'ano' : 'anos'}`
   }));
+  
+  const handlePlanSelect = (plan: any) => {
+    setSelectedPlan(plan);
+    setShowDialog(true);
+  };
+  
+  const handleAddToCart = () => {
+    if (!selectedPlan) return;
+    
+    if (dialogTab === "register") {
+      // Adding hosting with domain registration
+      if (!domainName || !domainName.trim()) {
+        toast.error("Por favor, insira um nome de domínio");
+        return;
+      }
+      
+      // First add domain to cart
+      addToCart({
+        id: `domain-${Date.now()}`,
+        title: `Domínio ${domainName}`,
+        price: 5000, // Domain registration price
+        basePrice: 5000,
+        quantity: 1,
+        type: 'domain',
+        years: parseInt(billingYears),
+        domain: domainName
+      });
+      
+      toast.success(`Domínio ${domainName} adicionado ao carrinho`);
+    }
+    
+    // Add the hosting plan to cart
+    const hostingItem = {
+      id: `hosting-${Date.now()}`,
+      title: `Hospedagem ${selectedPlan.title}`,
+      price: calculateYearlyPrice(selectedPlan.basePrice, parseInt(billingYears)),
+      basePrice: selectedPlan.basePrice,
+      quantity: 1,
+      type: 'hosting',
+      years: parseInt(billingYears),
+      description: selectedPlan.description,
+      domain: dialogTab === "register" ? domainName : undefined
+    };
+    
+    addToCart(hostingItem);
+    toast.success(`Plano ${selectedPlan.title} adicionado ao carrinho`);
+    setShowDialog(false);
+    setSelectedPlan(null);
+    setDomainName("");
+    
+    // Navigate to cart
+    navigate("/cart");
+  };
 
   return (
     <Layout>
@@ -92,8 +168,6 @@ const CpanelHosting = () => {
                 <SelectItem value="1">1 ano</SelectItem>
                 <SelectItem value="2">2 anos</SelectItem>
                 <SelectItem value="3">3 anos</SelectItem>
-                <SelectItem value="4">4 anos</SelectItem>
-                <SelectItem value="5">5 anos</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -103,6 +177,8 @@ const CpanelHosting = () => {
               <PricingCard
                 key={plan.title}
                 {...plan}
+                ctaText="Adicionar ao carrinho"
+                onAction={() => handlePlanSelect(plan)}
               />
             ))}
           </div>
@@ -122,16 +198,16 @@ const CpanelHosting = () => {
             {[
               "Painel cPanel",
               "Certificado SSL Grátis",
-              "Domínio Grátis*",
               "99.9% de Uptime",
               "Suporte 24/7",
               "Instalador WordPress",
               "Backup Automático",
-              "CDN Cloudflare",
               "PHP Atualizado",
-              "Migração Gratuita",
               "Base de Dados MySQL",
               "Criador de Sites",
+              "Firewall Avançado",
+              "Proteção DDoS",
+              "Migração Gratuita",
             ].map((feature, i) => (
               <div key={i} className="flex items-center gap-2">
                 <div className="h-5 w-5 rounded-full bg-primary/20 flex items-center justify-center text-primary">
@@ -140,9 +216,6 @@ const CpanelHosting = () => {
                 <span className="text-sm">{feature}</span>
               </div>
             ))}
-          </div>
-          <div className="text-center text-sm text-muted-foreground mt-8">
-            * Domínio grátis no primeiro ano com planos anuais.
           </div>
         </div>
       </section>
@@ -172,8 +245,65 @@ const CpanelHosting = () => {
           </div>
         </div>
       </section>
+      
+      {/* Domain registration/existing domain dialog */}
+      <Dialog open={showDialog} onOpenChange={setShowDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Adicionar Hospedagem</DialogTitle>
+            <DialogDescription>
+              Escolha entre registrar um novo domínio ou usar um domínio que você já possui.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <Tabs defaultValue="register" value={dialogTab} onValueChange={setDialogTab}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="register">Registrar novo domínio</TabsTrigger>
+              <TabsTrigger value="existing">Usar domínio existente</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="register" className="mt-4">
+              <div className="space-y-4">
+                <div className="grid w-full gap-2">
+                  <label htmlFor="domainName" className="text-sm font-medium">Nome do domínio</label>
+                  <Input 
+                    id="domainName" 
+                    placeholder="exemplo.ao" 
+                    value={domainName}
+                    onChange={(e) => setDomainName(e.target.value)}
+                  />
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  O registro de domínio tem uma taxa adicional de {formatPrice(5000)}/ano
+                </p>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="existing" className="mt-4">
+              <div className="space-y-4">
+                <p className="text-sm">
+                  Se você já possui um domínio com outro provedor, você pode usá-lo com nossa hospedagem.
+                </p>
+                <p className="text-sm font-medium">
+                  Após a contratação, enviaremos instruções sobre como apontar seu domínio para nossos servidores.
+                </p>
+              </div>
+            </TabsContent>
+          </Tabs>
+          
+          <DialogFooter className="sm:justify-end">
+            <Button variant="outline" onClick={() => setShowDialog(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleAddToCart}>
+              Continuar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 };
 
 export default CpanelHosting;
+
