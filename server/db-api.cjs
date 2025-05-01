@@ -147,10 +147,14 @@ app.post('/db/execute-query', async (req, res) => {
     });
   }
   
+  console.log('Executando consulta:', query);
+  console.log('Parâmetros:', params);
+  
   try {
     const client = await pool.connect();
     try {
       const result = await client.query(query, params);
+      console.log('Resultado da consulta:', result.rows);
       res.json({
         success: true,
         data: result.rows,

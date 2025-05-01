@@ -19,6 +19,11 @@ const getApiBaseUrl = (): string => {
     return import.meta.env.VITE_API_URL;
   }
 
+  // Se estamos em produção e o site está em deve.angohost.ao, usar essa URL
+  if (typeof window !== 'undefined' && window.location.hostname === 'deve.angohost.ao') {
+    return 'https://deve.angohost.ao/api';
+  }
+  
   // Em desenvolvimento, usa o proxy do Vite
   if (import.meta.env.DEV) {
     return '/api';
@@ -34,9 +39,10 @@ const getApiBaseUrl = (): string => {
  */
 export const testDatabaseConnection = async (): Promise<QueryResult> => {
   try {
-    console.log('Testando conexão com o banco de dados usando URL:', getApiBaseUrl());
+    const apiUrl = getApiBaseUrl();
+    console.log('Testando conexão com o banco de dados usando URL:', apiUrl);
     
-    const response = await fetch(`${getApiBaseUrl()}/db/test-connection`, {
+    const response = await fetch(`${apiUrl}/db/test-connection`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -86,11 +92,12 @@ export const testDatabaseConnection = async (): Promise<QueryResult> => {
  */
 export const executeQuery = async (query: string, params?: any[]): Promise<QueryResult> => {
   try {
-    console.log('Executando consulta usando URL:', getApiBaseUrl());
+    const apiUrl = getApiBaseUrl();
+    console.log('Executando consulta usando URL:', apiUrl);
     console.log('Consulta:', query);
     console.log('Parâmetros:', params);
     
-    const response = await fetch(`${getApiBaseUrl()}/db/execute-query`, {
+    const response = await fetch(`${apiUrl}/db/execute-query`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

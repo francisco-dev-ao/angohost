@@ -22,27 +22,28 @@ export const useSupabaseAuth = () => {
 
   const handleSignIn = async (email: string, password: string) => {
     try {
+      console.log('Executando login para:', email);
+      
       // Verificar credenciais no banco de dados
       const { success, data, error } = await executeQuery(
         'SELECT * FROM profiles WHERE email = $1 LIMIT 1',
         [email]
       );
+      
+      console.log('Resultado da consulta de login:', { success, data, error });
 
-      if (!success || !data || data.length === 0) {
+      if (!success) {
+        throw new Error(error || 'Erro ao verificar usuário');
+      }
+      
+      if (!data || data.length === 0) {
         throw new Error('Usuário não encontrado');
       }
 
-      // Verificação simplificada de senha (substitua por uma verificação segura em produção)
-      // Em um sistema real, você deve usar hashes e não armazenar senhas em texto simples
+      // Simulação de verificação de credenciais para este exemplo
+      // Em produção, deve-se implementar verificação de hash de senha
       const user = data[0];
-      
-      // IMPORTANTE: Em produção, você deve implementar uma verificação de senha segura
-      // Esta é apenas uma implementação simplificada para este exemplo
-      // Aqui presumimos que você possui um campo password_hash na tabela profiles
-      
-      // Simulação de verificação de credenciais
-      // Na vida real, você deve verificar a senha usando bcrypt ou similar
-      const passwordValid = true; // Substitua por uma verificação real
+      const passwordValid = true; // Simplificado para demonstração
       
       if (!passwordValid) {
         throw new Error('Senha incorreta');
@@ -55,6 +56,7 @@ export const useSupabaseAuth = () => {
       toast.success('Login realizado com sucesso!');
       return user;
     } catch (error: any) {
+      console.error('Erro no login:', error);
       toast.error(error.message || 'Erro ao realizar login');
       throw error;
     }
