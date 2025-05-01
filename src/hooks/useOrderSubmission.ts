@@ -6,7 +6,7 @@ import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { useCart } from '@/contexts/CartContext';
 import { toast } from 'sonner';
 
-export const useOrderSubmission = (contactProfile: string | null, profiles: any[], paymentMethod: string | null, formData: any) => {
+export const useOrderSubmission = (formData: any, paymentMethod: string | null) => {
   const [isSavingCart, setIsSavingCart] = useState(false);
   const { saveCartAsOrder, isSaving } = useSaveOrder();
   const { user } = useSupabaseAuth();
@@ -33,10 +33,12 @@ export const useOrderSubmission = (contactProfile: string | null, profiles: any[
       
       const orderData = {
         paymentMethodId: paymentMethod,
-        contactProfileId: contactProfile,
-        clientDetails: contactProfile 
-          ? profiles.find(p => p.id === contactProfile) 
-          : { name: formData.name, email: formData.email, phone: formData.phone, address: formData.address }
+        clientDetails: { 
+          name: formData.name, 
+          email: formData.email, 
+          phone: formData.phone, 
+          address: formData.address 
+        }
       };
       
       const order = await saveCartAsOrder(orderData);

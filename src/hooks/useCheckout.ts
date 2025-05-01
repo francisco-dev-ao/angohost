@@ -18,7 +18,6 @@ export const useCheckout = () => {
     payment: false
   });
   
-  const [contactProfile, setContactProfile] = useState<string | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<string | null>(null);
   const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
   const [formData, setFormData] = useState({
@@ -39,16 +38,21 @@ export const useCheckout = () => {
     calculateTotals();
     
     if (user) {
-      setCompletedSteps(prev => ({ ...prev, client: true }));
-    }
-    
-    if (user) {
       loadUserProfile();
       loadPaymentMethods();
     }
     
     setIsLoading(false);
   }, [user, items]);
+  
+  useEffect(() => {
+    // Verificar se os dados do cliente estão preenchidos
+    if (user && formData.name && formData.email && formData.phone && formData.address) {
+      setCompletedSteps(prev => ({ ...prev, client: true }));
+    } else {
+      setCompletedSteps(prev => ({ ...prev, client: false }));
+    }
+  }, [user, formData]);
   
   const calculateTotals = () => {
     const cartSubtotal = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
@@ -124,11 +128,6 @@ export const useCheckout = () => {
       setPaymentMethods([bankTransfer]);
       setPaymentMethod('bank_transfer');
     }
-  };
-  
-  const handleProfileChange = (profileId: string) => {
-    setContactProfile(profileId);
-    setCompletedSteps(prev => ({ ...prev, client: true }));
   };
   
   const handlePaymentMethodChange = (methodId: string) => {
@@ -209,16 +208,11 @@ export const useCheckout = () => {
     if (activeStep === 'payment') setActiveStep('service');
     else if (activeStep === 'service') setActiveStep('client');
   };
-  
-  const createNewProfile = () => {
-    navigate('/client/contact-profiles?returnTo=/checkout');
-  };
 
   return {
     activeStep,
     setActiveStep,
     completedSteps,
-    contactProfile,
     paymentMethod,
     paymentMethods,
     formData,
@@ -229,14 +223,12 @@ export const useCheckout = () => {
     billingCycle,
     isLoading,
     items,
-    handleProfileChange,
     handlePaymentMethodChange,
     handleBillingCycleChange,
     handleUpdateBillingCycle,
     handleRemoveItem,
     nextStep,
     prevStep,
-    createNewProfile,
     setCompletedSteps,
   };
 };

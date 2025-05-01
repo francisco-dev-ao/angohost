@@ -2,7 +2,7 @@
 import React from 'react';
 import { useCheckout } from '@/hooks/useCheckout';
 import { useOrderSubmission } from '@/hooks/useOrderSubmission';
-import { useContactProfiles } from '@/hooks/useContactProfiles';
+import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 
 // Import refactored components
 import CheckoutSteps from './CheckoutSteps';
@@ -11,13 +11,12 @@ import CheckoutContent from './CheckoutContent';
 import { motion } from 'framer-motion';
 
 export const EnhancedCheckout = () => {
-  const { profiles, isLoading: isLoadingProfiles } = useContactProfiles();
+  const { user } = useSupabaseAuth();
   
   const {
     activeStep,
     setActiveStep,
     completedSteps,
-    contactProfile,
     paymentMethod,
     paymentMethods,
     formData,
@@ -28,20 +27,18 @@ export const EnhancedCheckout = () => {
     billingCycle,
     isLoading,
     items,
-    handleProfileChange,
     handlePaymentMethodChange,
     handleBillingCycleChange,
     handleUpdateBillingCycle,
     handleRemoveItem,
     nextStep,
     prevStep,
-    createNewProfile,
   } = useCheckout();
 
   const {
     handleSubmit,
     isSaving,
-  } = useOrderSubmission(contactProfile, profiles, paymentMethod, formData);
+  } = useOrderSubmission(formData, paymentMethod);
 
   if (isLoading) {
     return (
@@ -84,13 +81,8 @@ export const EnhancedCheckout = () => {
           <CheckoutContent
             activeStep={activeStep}
             completedSteps={completedSteps}
-            profiles={profiles}
-            isLoadingProfiles={isLoadingProfiles}
-            contactProfile={contactProfile}
-            handleProfileChange={handleProfileChange}
             formData={formData}
             setFormData={setFormData}
-            createNewProfile={createNewProfile}
             nextStep={nextStep}
             prevStep={prevStep}
             items={items}

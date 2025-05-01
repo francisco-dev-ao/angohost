@@ -10,10 +10,6 @@ import { motion } from 'framer-motion';
 interface CheckoutContentProps {
   activeStep: string;
   completedSteps: Record<string, boolean>;
-  profiles: any[];
-  isLoadingProfiles: boolean;
-  contactProfile: string | null;
-  handleProfileChange: (profileId: string) => void;
   formData: {
     name: string;
     email: string;
@@ -26,7 +22,6 @@ interface CheckoutContentProps {
     phone: string;
     address: string;
   }>>;
-  createNewProfile: () => void;
   nextStep: () => void;
   prevStep: () => void;
   items: any[];
@@ -42,13 +37,8 @@ interface CheckoutContentProps {
 const CheckoutContent: React.FC<CheckoutContentProps> = ({
   activeStep,
   completedSteps,
-  profiles,
-  isLoadingProfiles,
-  contactProfile,
-  handleProfileChange,
   formData,
   setFormData,
-  createNewProfile,
   nextStep,
   prevStep,
   items,
@@ -82,13 +72,8 @@ const CheckoutContent: React.FC<CheckoutContentProps> = ({
             <Card>
               <CardContent className="pt-6">
                 <ClientStep
-                  profiles={profiles}
-                  isLoadingProfiles={isLoadingProfiles}
-                  contactProfile={contactProfile}
-                  handleProfileChange={handleProfileChange}
                   formData={formData}
                   setFormData={setFormData}
-                  createNewProfile={createNewProfile}
                   nextStep={nextStep}
                   completedSteps={completedSteps}
                 />
