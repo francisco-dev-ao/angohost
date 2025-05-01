@@ -18,6 +18,7 @@ const fs = require('fs');
 
 // Load environment variables
 dotenv.config();
+console.log('Senha lida do .env:', process.env.DB_PASSWORD);
 
 const app = express();
 
