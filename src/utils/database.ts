@@ -14,22 +14,31 @@ interface QueryResult {
 
 // Get the API URL based on the environment
 const getApiBaseUrl = (): string => {
-  // Verificar primeiro se há uma URL explícita fornecida via variável de ambiente
+  // First check if there's an explicit URL provided via environment variable
   if (import.meta.env.VITE_API_URL) {
     return import.meta.env.VITE_API_URL;
   }
 
-  // Se estamos em produção e o site está em deve.angohost.ao, usar essa URL
-  if (typeof window !== 'undefined' && window.location.hostname === 'deve.angohost.ao') {
-    return 'https://deve.angohost.ao/api';
+  // For specific domain configurations
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    
+    // Production configurations
+    if (hostname === 'deve.angohost.ao') {
+      return 'https://deve.angohost.ao/api';
+    }
+    
+    if (hostname === 'www.angohost.ao') {
+      return 'https://www.angohost.ao/api';
+    }
   }
   
-  // Em desenvolvimento, usa o proxy do Vite
+  // In development, use the proxy from Vite
   if (import.meta.env.DEV) {
     return '/api';
   }
 
-  // Em produção, usa o caminho relativo ou a URL base do site atual
+  // In production, use the relative path or current URL base
   const currentUrl = window.location.origin;
   return `${currentUrl}/api`;
 };
@@ -42,6 +51,15 @@ export const testDatabaseConnection = async (): Promise<QueryResult> => {
     const apiUrl = getApiBaseUrl();
     console.log('Testando conexão com o banco de dados usando URL:', apiUrl);
     
+    // For mock database in development
+    if (import.meta.env.DEV && 
+        import.meta.env.VITE_USE_MOCK_DB === 'true' && 
+        typeof window !== 'undefined' && 
+        (window as any).__mockDbResponses) {
+      console.log('Usando simulação de banco de dados para desenvolvimento');
+      return (window as any).__mockDbResponses.testConnection;
+    }
+    
     const response = await fetch(`${apiUrl}/db/test-connection`, {
       method: 'GET',
       headers: {
@@ -51,31 +69,30 @@ export const testDatabaseConnection = async (): Promise<QueryResult> => {
       credentials: 'include',
     });
     
-    // Log para debug
     console.log('Status da resposta:', response.status);
     
-    // Se não for 2xx, tratar como erro
+    // Handle non-2xx responses
     if (!response.ok) {
       const contentType = response.headers.get('content-type');
       
-      // Se for HTML em vez de JSON (erro comum em servidores de produção)
+      // If HTML instead of JSON (common in production server errors)
       if (contentType && contentType.includes('text/html')) {
         const text = await response.text();
         console.error('Recebido HTML em vez de JSON:', text.substring(0, 100) + '...');
         throw new Error(`Erro do servidor (${response.status}): endpoint retornou HTML em vez de JSON`);
       }
       
-      // Tentar obter detalhes do erro no formato JSON
+      // Try to get error details in JSON format
       try {
         const errorData = await response.json();
         throw new Error(errorData.error || `Erro HTTP ${response.status}`);
       } catch (jsonError) {
-        // Se não for possível analisar como JSON, usar mensagem padrão
+        // If JSON parsing fails, use default message
         throw new Error(`Erro HTTP! Status: ${response.status}`);
       }
     }
     
-    // Processar resposta bem-sucedida
+    // Process successful response
     const result = await response.json();
     return result;
   } catch (err: any) {
@@ -97,6 +114,15 @@ export const executeQuery = async (query: string, params?: any[]): Promise<Query
     console.log('Consulta:', query);
     console.log('Parâmetros:', params);
     
+    // For mock database in development
+    if (import.meta.env.DEV && 
+        import.meta.env.VITE_USE_MOCK_DB === 'true' && 
+        typeof window !== 'undefined' && 
+        (window as any).__mockDbResponses) {
+      console.log('Usando simulação de banco de dados para desenvolvimento');
+      return (window as any).__mockDbResponses.executeQuery;
+    }
+    
     const response = await fetch(`${apiUrl}/db/execute-query`, {
       method: 'POST',
       headers: {
@@ -107,31 +133,30 @@ export const executeQuery = async (query: string, params?: any[]): Promise<Query
       body: JSON.stringify({ query, params }),
     });
     
-    // Log para debug
     console.log('Status da resposta:', response.status);
     
-    // Se não for 2xx, tratar como erro
+    // Handle non-2xx responses
     if (!response.ok) {
       const contentType = response.headers.get('content-type');
       
-      // Se for HTML em vez de JSON (erro comum em servidores de produção)
+      // If HTML instead of JSON (common in production server errors)
       if (contentType && contentType.includes('text/html')) {
         const text = await response.text();
         console.error('Recebido HTML em vez de JSON:', text.substring(0, 100) + '...');
         throw new Error(`Erro do servidor (${response.status}): endpoint retornou HTML em vez de JSON`);
       }
       
-      // Tentar obter detalhes do erro no formato JSON
+      // Try to get error details in JSON format
       try {
         const errorData = await response.json();
         throw new Error(errorData.error || `Erro HTTP ${response.status}`);
       } catch (jsonError) {
-        // Se não for possível analisar como JSON, usar mensagem padrão
+        // If JSON parsing fails, use default message
         throw new Error(`Erro HTTP! Status: ${response.status}`);
       }
     }
     
-    // Processar resposta bem-sucedida
+    // Process successful response
     const result = await response.json();
     return result;
   } catch (err: any) {
@@ -143,15 +168,15 @@ export const executeQuery = async (query: string, params?: any[]): Promise<Query
   }
 };
 
-// Implementação simulada para desenvolvimento local
+// Simulated implementation for local development
 if (import.meta.env.DEV && typeof window !== 'undefined') {
   console.log('Usando implementação de banco de dados para ambiente:', import.meta.env.MODE);
   
-  // Usar mocks apenas se explicitamente configurado
+  // Use mocks only if explicitly configured
   if (import.meta.env.VITE_USE_MOCK_DB === 'true') {
     console.warn('Usando implementação simulada de banco de dados para desenvolvimento');
     
-    // Mocks para testar UI sem backend
+    // Mocks to test UI without backend
     (window as any).__mockDbResponses = {
       testConnection: { 
         success: true, 

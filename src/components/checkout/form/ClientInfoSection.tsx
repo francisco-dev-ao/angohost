@@ -12,9 +12,10 @@ interface ClientInfoSectionProps {
     address: string;
   };
   profileLoaded: boolean;
+  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
-const ClientInfoSection = ({ formData, profileLoaded }: ClientInfoSectionProps) => {
+const ClientInfoSection = ({ formData, profileLoaded, onChange }: ClientInfoSectionProps) => {
   return (
     <Card>
       <CardHeader>
@@ -29,6 +30,7 @@ const ClientInfoSection = ({ formData, profileLoaded }: ClientInfoSectionProps) 
               id="name"
               name="name"
               value={formData.name}
+              onChange={onChange}
               disabled={true}
               className="bg-muted"
             />
@@ -40,6 +42,7 @@ const ClientInfoSection = ({ formData, profileLoaded }: ClientInfoSectionProps) 
               name="email"
               type="email"
               value={formData.email}
+              onChange={onChange}
               disabled={true}
               className="bg-muted"
             />
@@ -50,6 +53,7 @@ const ClientInfoSection = ({ formData, profileLoaded }: ClientInfoSectionProps) 
               id="phone"
               name="phone"
               value={formData.phone}
+              onChange={onChange}
               disabled={profileLoaded}
               className={profileLoaded ? "bg-muted" : ""}
             />
@@ -65,6 +69,7 @@ const ClientInfoSection = ({ formData, profileLoaded }: ClientInfoSectionProps) 
               id="address"
               name="address"
               value={formData.address}
+              onChange={onChange}
               disabled={profileLoaded}
               className={profileLoaded ? "bg-muted" : ""}
             />

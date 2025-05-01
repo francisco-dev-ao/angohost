@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
-import { supabase } from '@/integrations/supabase/client';
+import { executeQuery } from '@/utils/database';
 import { toast } from 'sonner';
 import { useCart } from '@/contexts/CartContext';
 
@@ -14,6 +14,8 @@ export const useCheckoutForm = () => {
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string | null>(null);
   const [selectedContactProfile, setSelectedContactProfile] = useState<string | null>(null);
   const [skipPayment, setSkipPayment] = useState(false);
+  const [contactProfiles, setContactProfiles] = useState<any[]>([]);
+  const [isLoadingProfiles, setIsLoadingProfiles] = useState(true);
   
   const [formData, setFormData] = useState({
     name: user?.user_metadata?.full_name || '',
@@ -28,6 +30,7 @@ export const useCheckoutForm = () => {
     if (user) {
       fetchUserProfile();
       fetchPaymentMethods();
+      fetchContactProfiles();
     }
   }, [user]);
 
@@ -35,18 +38,18 @@ export const useCheckoutForm = () => {
     if (!user) return;
     
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('full_name, email, phone, address')
-        .eq('id', user.id)
-        .single();
-        
-      if (!error && data) {
+      const { success, data, error } = await executeQuery(
+        'SELECT full_name, email, phone, address FROM profiles WHERE id = $1 LIMIT 1',
+        [user.id]
+      );
+      
+      if (success && data && data.length > 0) {
+        const profile = data[0];
         setFormData({
-          name: data.full_name || user.user_metadata?.full_name || '',
-          email: data.email || user.email || '',
-          phone: data.phone || '',
-          address: data.address || '',
+          name: profile.full_name || user.user_metadata?.full_name || '',
+          email: profile.email || user.email || '',
+          phone: profile.phone || '',
+          address: profile.address || '',
         });
       } else {
         setFormData({
@@ -59,6 +62,32 @@ export const useCheckoutForm = () => {
       setProfileLoaded(true);
     } catch (error) {
       console.error('Error fetching user profile:', error);
+    }
+  };
+
+  const fetchContactProfiles = async () => {
+    if (!user) return;
+    
+    try {
+      setIsLoadingProfiles(true);
+      const { success, data, error } = await executeQuery(
+        'SELECT id, name, document FROM contact_profiles WHERE user_id = $1 ORDER BY name',
+        [user.id]
+      );
+      
+      if (success && data) {
+        setContactProfiles(data);
+        if (data.length > 0) {
+          setSelectedContactProfile(data[0].id);
+        }
+      } else if (error) {
+        throw new Error(error);
+      }
+    } catch (error: any) {
+      console.error('Error fetching contact profiles:', error);
+      toast.error('Erro ao carregar perfis de contato');
+    } finally {
+      setIsLoadingProfiles(false);
     }
   };
 
@@ -78,12 +107,12 @@ export const useCheckoutForm = () => {
         }
       ];
       
-      const { data, error } = await supabase
-        .from('payment_methods')
-        .select('*')
-        .eq('is_active', true);
-        
-      if (error) throw error;
+      const { success, data, error } = await executeQuery(
+        'SELECT * FROM payment_methods WHERE is_active = $1',
+        [true]
+      );
+      
+      if (!success || error) throw new Error(error || 'Erro ao buscar métodos de pagamento');
       
       const allMethods = [...defaultMethods, ...(data || [])];
       setPaymentMethods(allMethods);
@@ -128,6 +157,8 @@ export const useCheckoutForm = () => {
     setSelectedContactProfile,
     skipPayment,
     setSkipPayment,
+    contactProfiles,
+    isLoadingProfiles,
     hasDomains
   };
 };
