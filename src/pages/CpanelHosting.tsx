@@ -12,6 +12,7 @@ import { useCart } from "@/contexts/CartContext";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
+import DomainValidator from "@/components/DomainValidator";
 
 const CpanelHosting = () => {
   const [billingYears, setBillingYears] = useState("1");
@@ -19,6 +20,7 @@ const CpanelHosting = () => {
   const [showDialog, setShowDialog] = useState(false);
   const [dialogTab, setDialogTab] = useState("register");
   const [domainName, setDomainName] = useState("");
+  const [isDomainValid, setIsDomainValid] = useState(false);
   
   const navigate = useNavigate();
   const { addToCart } = useCart();
@@ -94,6 +96,13 @@ const CpanelHosting = () => {
   const handlePlanSelect = (plan: any) => {
     setSelectedPlan(plan);
     setShowDialog(true);
+    setIsDomainValid(false);
+    setDomainName("");
+  };
+  
+  const handleDomainValidated = (domain: string) => {
+    setDomainName(domain);
+    setIsDomainValid(true);
   };
   
   const handleAddToCart = () => {
@@ -101,8 +110,8 @@ const CpanelHosting = () => {
     
     if (dialogTab === "register") {
       // Adding hosting with domain registration
-      if (!domainName || !domainName.trim()) {
-        toast.error("Por favor, insira um nome de domínio");
+      if (!isDomainValid) {
+        toast.error("Por favor, verifique a disponibilidade do domínio primeiro");
         return;
       }
       
@@ -139,6 +148,7 @@ const CpanelHosting = () => {
     setShowDialog(false);
     setSelectedPlan(null);
     setDomainName("");
+    setIsDomainValid(false);
     
     // Navigate to cart
     navigate("/cart");
@@ -266,13 +276,14 @@ const CpanelHosting = () => {
               <div className="space-y-4">
                 <div className="grid w-full gap-2">
                   <label htmlFor="domainName" className="text-sm font-medium">Nome do domínio</label>
-                  <Input 
-                    id="domainName" 
-                    placeholder="exemplo.ao" 
-                    value={domainName}
-                    onChange={(e) => setDomainName(e.target.value)}
-                  />
+                  <DomainValidator onDomainValidated={handleDomainValidated} />
                 </div>
+                {isDomainValid && domainName && (
+                  <div className="bg-green-50 p-3 rounded border border-green-200 flex items-center gap-2">
+                    <Check className="h-4 w-4 text-green-500" />
+                    <span className="text-sm text-green-700">Domínio {domainName} está disponível!</span>
+                  </div>
+                )}
                 <p className="text-sm text-muted-foreground">
                   O registro de domínio tem uma taxa adicional de {formatPrice(5000)}/ano
                 </p>
@@ -295,7 +306,10 @@ const CpanelHosting = () => {
             <Button variant="outline" onClick={() => setShowDialog(false)}>
               Cancelar
             </Button>
-            <Button onClick={handleAddToCart}>
+            <Button 
+              onClick={handleAddToCart} 
+              disabled={dialogTab === "register" && !isDomainValid}
+            >
               Continuar
             </Button>
           </DialogFooter>
@@ -306,4 +320,3 @@ const CpanelHosting = () => {
 };
 
 export default CpanelHosting;
-

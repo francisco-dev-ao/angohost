@@ -21,10 +21,9 @@ export const useOrderSubmission = (formData: any, paymentMethod: string | null) 
       return;
     }
     
-    // If user is not logged in, redirect to login page with return URL
+    // If user is not logged in, we don't need to redirect - the checkout page now handles authentication
     if (!user) {
-      toast.info('Faça login para finalizar sua compra');
-      navigate('/register', { state: { returnUrl: '/enhanced-checkout' } });
+      toast.info('Por favor, faça login ou crie uma conta para finalizar sua compra');
       return;
     }
     

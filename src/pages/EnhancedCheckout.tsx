@@ -1,17 +1,63 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import Layout from '@/components/Layout';
 import EnhancedCheckout from '@/components/checkout/EnhancedCheckout';
 import { useCart } from '@/contexts/CartContext';
 import { Button } from '@/components/ui/button';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
 import { motion } from 'framer-motion';
 import { ShoppingBag, ArrowRight } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { LoginForm } from '@/components/auth/LoginForm';
+import { RegisterForm } from '@/components/auth/RegisterForm';
+import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
+import { toast } from 'sonner';
 
 const EnhancedCheckoutPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { items, isLoading } = useCart();
+  const { user } = useSupabaseAuth();
+  
+  const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false);
+  const [authTab, setAuthTab] = useState('login');
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
+  
+  const { signIn, signUp } = useSupabaseAuth();
+
+  const handleLogin = async (email: string, password: string) => {
+    setIsAuthenticating(true);
+    try {
+      await signIn(email, password);
+      toast.success('Login realizado com sucesso');
+      setIsAuthDialogOpen(false);
+    } catch (error) {
+      console.error('Login error:', error);
+      toast.error('Erro ao realizar login. Verifique suas credenciais.');
+    } finally {
+      setIsAuthenticating(false);
+    }
+  };
+  
+  const handleRegister = async (email: string, password: string, fullName: string) => {
+    setIsAuthenticating(true);
+    try {
+      await signUp(email, password, fullName);
+      toast.success('Cadastro realizado com sucesso');
+      setIsAuthDialogOpen(false);
+    } catch (error: any) {
+      console.error('Registration error:', error);
+      if (error.message.includes('already registered')) {
+        toast.error('Este e-mail já está cadastrado. Faça login.');
+      } else {
+        toast.error('Erro ao realizar cadastro');
+      }
+    } finally {
+      setIsAuthenticating(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -71,6 +117,31 @@ const EnhancedCheckoutPage = () => {
         transition={{ duration: 0.5 }}
       >
         <div className="container">
+          {!user ? (
+            <div className="mb-8 p-6 border border-amber-200 bg-amber-50 rounded-lg">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                  <h3 className="text-lg font-medium mb-1">Faça login para continuar com a compra</h3>
+                  <p className="text-muted-foreground">Para finalizar sua compra, você precisa fazer login ou criar uma conta</p>
+                </div>
+                <div className="flex gap-3">
+                  <Button onClick={() => {
+                    setAuthTab('login');
+                    setIsAuthDialogOpen(true);
+                  }}>
+                    Fazer login
+                  </Button>
+                  <Button variant="outline" onClick={() => {
+                    setAuthTab('register');
+                    setIsAuthDialogOpen(true);
+                  }}>
+                    Criar conta
+                  </Button>
+                </div>
+              </div>
+            </div>
+          ) : null}
+          
           <EnhancedCheckout />
         </div>
         <div className="container mt-12 text-center">
@@ -93,6 +164,30 @@ const EnhancedCheckoutPage = () => {
           </div>
         </div>
       </motion.div>
+
+      {/* Authentication Dialog */}
+      <Dialog open={isAuthDialogOpen} onOpenChange={setIsAuthDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{authTab === 'login' ? 'Acesse sua conta' : 'Criar nova conta'}</DialogTitle>
+          </DialogHeader>
+          
+          <Tabs value={authTab} onValueChange={setAuthTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-4">
+              <TabsTrigger value="login" className="text-gray-700">Entrar</TabsTrigger>
+              <TabsTrigger value="register" className="text-gray-700">Criar Conta</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="login">
+              <LoginForm onSubmit={handleLogin} isLoading={isAuthenticating} />
+            </TabsContent>
+            
+            <TabsContent value="register">
+              <RegisterForm onSubmit={handleRegister} isLoading={isAuthenticating} />
+            </TabsContent>
+          </Tabs>
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 };
