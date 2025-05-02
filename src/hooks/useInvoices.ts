@@ -3,9 +3,25 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { toast } from 'sonner';
+import { invoicePdfConfig } from '@/utils/database';
+
+export interface Invoice {
+  id: string;
+  user_id: string;
+  invoice_number: string;
+  amount: number;
+  status: 'pending' | 'paid' | 'cancelled' | 'overdue';
+  due_date: string;
+  payment_date?: string;
+  items: any[];
+  created_at: string;
+  updated_at?: string;
+  order_id: string;
+  download_url?: string;
+}
 
 export const useInvoices = () => {
-  const [invoices, setInvoices] = useState<any[]>([]);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useSupabaseAuth();
 
@@ -47,13 +63,19 @@ export const useInvoices = () => {
         // Criar PDF e obter URL
         toast.info('Gerando PDF da fatura...');
         
-        // Aqui você chamaria sua API para gerar o PDF
-        // E depois atualizaria a URL de download no banco de dados
-        
         // Simulação de geração de PDF
         setTimeout(() => {
           toast.success('Fatura pronta para download');
-          // Aqui você abriria a nova URL do PDF
+          
+          // Em um ambiente real, isso seria substituído pela URL real do PDF
+          const mockPdfUrl = `${window.location.origin}/invoices/download/${invoiceId}`;
+          window.open(mockPdfUrl, '_blank');
+          
+          // Atualizar o registro da fatura com a URL de download
+          supabase
+            .from('invoices')
+            .update({ download_url: mockPdfUrl })
+            .eq('id', invoiceId);
         }, 2000);
       }
     } catch (error: any) {

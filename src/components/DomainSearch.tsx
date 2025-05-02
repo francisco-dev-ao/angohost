@@ -3,16 +3,19 @@ import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Search, Check, ShoppingCart } from "lucide-react";
+import { Search, Check, ShoppingCart, Network } from "lucide-react";
 import { useCart } from '@/contexts/CartContext';
 import { useNavigate } from 'react-router-dom';
 import { formatPrice } from "@/utils/formatters";
 import { useDomainExtensions } from '@/hooks/useDomainExtensions';
+import { checkDomainAvailability } from '@/utils/dnsResolver';
+import { DomainCheckResult } from '@/types/domain';
 
 interface DomainResult {
   domain: string;
   available: boolean;
   price: number;
+  records?: any[];
 }
 
 const DomainSearch = () => {
@@ -34,20 +37,32 @@ const DomainSearch = () => {
     
     setIsSearching(true);
     
-    // Simulate API call with timeout
-    setTimeout(() => {
+    try {
       const baseSearch = domain.includes('.') ? domain.split('.')[0] : domain;
       
-      // Use the extensions from the database
-      const searchResults = extensions.map(ext => ({
+      // Preparar verificações para todas as extensões
+      const extensionsToCheck = extensions.map(ext => ({
         domain: `${baseSearch}${ext.extension}`,
-        available: Math.random() > 0.3,
         price: ext.price
       }));
       
-      setResults(searchResults);
+      // Verificar domínios em paralelo
+      const checkPromises = extensionsToCheck.map(async (item) => {
+        const result = await checkDomainAvailability(item.domain);
+        return {
+          ...result,
+          price: item.price
+        };
+      });
+      
+      const domainResults = await Promise.all(checkPromises);
+      setResults(domainResults);
+    } catch (error) {
+      console.error("Erro ao verificar domínios:", error);
+      toast.error("Ocorreu um erro ao verificar os domínios.");
+    } finally {
       setIsSearching(false);
-    }, 800);
+    }
   };
   
   const handleSelectDomain = (domain: string, price: number) => {
@@ -64,6 +79,7 @@ const DomainSearch = () => {
         price: price,
         basePrice: price,
         type: 'domain',
+        domain: domain,
         years: 1
       });
       toast.success(`${domain} adicionado ao carrinho!`);
@@ -89,6 +105,7 @@ const DomainSearch = () => {
           price: domain.price,
           basePrice: domain.price,
           type: 'domain',
+          domain: domain.domain,
           years: 1
         });
         setSelectedDomains(prev => ({
@@ -134,15 +151,23 @@ const DomainSearch = () => {
                 className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
               >
                 <div className="space-y-1">
-                  <p className="font-medium">{result.domain}</p>
+                  <div className="font-medium flex items-center gap-1">
+                    <Network className="h-4 w-4 text-muted-foreground" />
+                    {result.domain}
+                  </div>
                   <p className={`text-sm ${result.available ? "text-green-600" : "text-red-600"} flex items-center gap-1`}>
                     {result.available ? (
                       <>
                         <Check className="h-4 w-4" />
-                        Disponível
+                        Disponível 
+                        {result.records && result.records.length === 0 && " - Sem registros DNS"}
                       </>
                     ) : (
-                      'Indisponível'
+                      <>Indisponível 
+                        {result.records && result.records.length > 0 && (
+                          <span className="text-xs"> - Registros DNS encontrados</span>
+                        )}
+                      </>
                     )}
                   </p>
                 </div>

@@ -1,9 +1,9 @@
 
 import React, { useState } from 'react';
-import { Search, Check, X } from 'lucide-react';
+import { Search, Check, X, Network } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { checkDomainAvailability } from '@/utils/dnsResolver';
 
 interface DomainValidatorProps {
   onDomainValidated: (domain: string) => void;
@@ -15,26 +15,32 @@ const DomainValidator = ({ onDomainValidated }: DomainValidatorProps) => {
   const [isDomainValid, setIsDomainValid] = useState<boolean | null>(null);
 
   const validateDomain = async (domain: string) => {
+    if (!domain || domain.trim() === '') return;
+    
     setIsSearching(true);
-    // Simulate API call with timeout
-    setTimeout(() => {
-      const isValid = /^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]\.[a-zA-Z]{2,}$/.test(domain);
-      setIsDomainValid(isValid);
-      setIsSearching(false);
+    try {
+      const result = await checkDomainAvailability(domain);
+      setIsDomainValid(result.available);
       
-      if (isValid) {
+      if (result.available) {
         onDomainValidated(domain);
-        toast.success('Domínio válido!');
+        toast.success('Domínio válido e disponível!');
       } else {
-        toast.error('Domínio inválido. Tente novamente.');
+        toast.error('Domínio não disponível. Registros DNS encontrados.');
       }
-    }, 800);
+    } catch (error) {
+      console.error('Erro ao verificar domínio:', error);
+      setIsDomainValid(false);
+      toast.error('Erro ao verificar domínio. Por favor, tente novamente.');
+    } finally {
+      setIsSearching(false);
+    }
   };
 
   return (
     <div className="space-y-4">
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+        <Network className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
         <Input
           type="text"
           placeholder="Digite seu domínio..."

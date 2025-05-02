@@ -1,11 +1,9 @@
 
 import React from 'react';
-import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { User, PlusCircle } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { User } from 'lucide-react';
 
 interface ContactProfile {
   id: string;
@@ -28,12 +26,6 @@ const ContactProfileSection = ({
   setSelectedContactProfile,
   hasDomains
 }: ContactProfileSectionProps) => {
-  const navigate = useNavigate();
-
-  const createNewProfile = () => {
-    navigate('/client/contact-profiles?returnTo=/checkout');
-  };
-
   if (!hasDomains) {
     return null;
   }
@@ -81,17 +73,6 @@ const ContactProfileSection = ({
             <p>Você não possui perfis de contato cadastrados</p>
           </div>
         )}
-        <div className="mt-4">
-          <Button 
-            type="button" 
-            variant="outline"
-            onClick={createNewProfile}
-            className="w-full"
-          >
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Criar novo perfil de contato
-          </Button>
-        </div>
       </CardContent>
     </Card>
   );

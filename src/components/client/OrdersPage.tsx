@@ -1,298 +1,138 @@
-
-import React, { useEffect } from 'react';
+import React, { useState } from 'react';
+import { useOrders } from '@/hooks/useOrders';
 import {
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import {
   Table,
   TableBody,
+  TableCaption,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useOrders } from '@/hooks/useOrders';
+import { Button } from "@/components/ui/button";
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { motion } from 'framer-motion';
-import { ShoppingBag, RefreshCcw, Filter, Download, Eye, Clock } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
+import { FileText, Eye, Download } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { formatPrice } from '@/utils/formatters';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useLocation, useNavigate } from 'react-router-dom';
+import { Skeleton } from '@/components/ui/skeleton';
 
-const OrderDetails = ({ order, isOpen, setIsOpen }: { order: any, isOpen: boolean, setIsOpen: (open: boolean) => void }) => {
-  if (!order) return null;
-  
+const OrdersPage = () => {
+  const { orders, isLoading } = useOrders();
+  const navigate = useNavigate();
+  const [selectedOrder, setSelectedOrder] = useState<string | null>(null);
+  const [showDetails, setShowDetails] = useState<boolean>(false);
+
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogContent className="sm:max-w-4xl">
-        <DialogHeader>
-          <DialogTitle>Detalhes do Pedido #{order.order_number}</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-6">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <h3 className="font-medium text-sm text-muted-foreground">Status do Pedido</h3>
-              <p className="font-semibold">
-                {order.status === 'completed' ? 'Concluído' :
-                 order.status === 'pending' ? 'Pendente' :
-                 order.status === 'processing' ? 'Processando' :
-                 order.status === 'cancelled' || order.status === 'canceled' ? 'Cancelado' :
-                 order.status}
-              </p>
+    <div className="space-y-8">
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold">Meus Pedidos</h1>
+      </div>
+      
+      {isLoading ? (
+        <Card>
+          <CardContent className="p-6">
+            <div className="space-y-4">
+              <Skeleton className="h-8 w-1/3" />
+              <div className="space-y-2">
+                <Skeleton className="h-6 w-full" />
+                <Skeleton className="h-6 w-full" />
+                <Skeleton className="h-6 w-full" />
+              </div>
             </div>
-            <div>
-              <h3 className="font-medium text-sm text-muted-foreground">Status do Pagamento</h3>
-              <p className="font-semibold">
-                {order.payment_status === 'paid' ? 'Pago' :
-                 order.payment_status === 'pending_invoice' ? 'Fatura Gerada' :
-                 order.payment_status === 'pending' ? 'Pendente' :
-                 order.payment_status}
-              </p>
-            </div>
-            <div>
-              <h3 className="font-medium text-sm text-muted-foreground">Data do Pedido</h3>
-              <p className="font-semibold">{format(new Date(order.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })}</p>
-            </div>
-            <div>
-              <h3 className="font-medium text-sm text-muted-foreground">Valor Total</h3>
-              <p className="font-semibold">{formatPrice(order.total_amount)}</p>
-            </div>
-          </div>
-          
-          <div>
-            <h3 className="font-medium mb-2">Itens do Pedido</h3>
+          </CardContent>
+        </Card>
+      ) : orders.length === 0 ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Nenhum pedido encontrado</CardTitle>
+            <CardDescription>
+              Você ainda não realizou nenhum pedido.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button onClick={() => navigate('/domains')}>Fazer um pedido</Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <CardHeader>
+            <CardTitle>Histórico de Pedidos</CardTitle>
+            <CardDescription>
+              Acompanhe o status dos seus pedidos e acesse as faturas.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
             <Table>
+              <TableCaption>Lista de pedidos realizados</TableCaption>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Item</TableHead>
-                  <TableHead>Quantidade</TableHead>
-                  <TableHead className="text-right">Preço</TableHead>
+                  <TableHead>Nº do Pedido</TableHead>
+                  <TableHead>Data</TableHead>
+                  <TableHead>Valor</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {order.items && order.items.map((item: any, index: number) => (
-                  <TableRow key={index}>
+                {orders.map((order) => (
+                  <TableRow key={order.id}>
                     <TableCell className="font-medium">
-                      {item.name}
-                      {item.domain && <span className="block text-sm text-muted-foreground">{item.domain}</span>}
+                      <div className="flex items-center space-x-2">
+                        <FileText className="h-4 w-4 text-primary" />
+                        <span>{order.order_number || order.id.substring(0, 8)}</span>
+                      </div>
                     </TableCell>
-                    <TableCell>{item.quantity}</TableCell>
-                    <TableCell className="text-right">{formatPrice(item.price * item.quantity)}</TableCell>
+                    <TableCell>{format(new Date(order.created_at), 'dd/MM/yyyy', { locale: ptBR })}</TableCell>
+                    <TableCell>{formatPrice(order.total_amount)}</TableCell>
+                    <TableCell>
+                      <span 
+                        className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium
+                          ${order.payment_status === 'paid' ? 'bg-green-100 text-green-800' : 
+                          order.payment_status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 
+                          'bg-red-100 text-red-800'}`}
+                      >
+                        {order.payment_status === 'paid' ? 'Pago' : 
+                         order.payment_status === 'pending' ? 'Pendente' : 'Cancelado'}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center space-x-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => {
+                            setSelectedOrder(order.id);
+                            setShowDetails(true);
+                          }}
+                        >
+                          <Eye className="h-4 w-4 mr-1" />
+                          Detalhes
+                        </Button>
+                        {order.invoice && (
+                          <Button variant="outline" size="sm">
+                            <Download className="h-4 w-4 mr-1" />
+                            Fatura
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-};
-
-const OrdersPage = () => {
-  const { orders, loading } = useOrders();
-  const [selectedOrder, setSelectedOrder] = useState<any>(null);
-  const [isOrderDetailsOpen, setIsOrderDetailsOpen] = useState(false);
-  const location = useLocation();
-  const navigate = useNavigate();
-
-  // Verificar se há um parâmetro de pedido na URL
-  useEffect(() => {
-    const queryParams = new URLSearchParams(location.search);
-    const orderParam = queryParams.get('order');
-    
-    if (orderParam && orders.length > 0) {
-      const foundOrder = orders.find(order => order.id === orderParam);
-      if (foundOrder) {
-        setSelectedOrder(foundOrder);
-        setIsOrderDetailsOpen(true);
-        
-        // Limpar o parâmetro da URL após processar
-        navigate('/client/orders', { replace: true });
-      }
-    }
-  }, [location.search, orders, navigate]);
-
-  if (loading) {
-    return (
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <Skeleton className="h-10 w-40" />
-          <Skeleton className="h-10 w-32" />
-        </div>
-        <Card>
-          <CardHeader>
-            <Skeleton className="h-8 w-40" />
-          </CardHeader>
-          <CardContent>
-            <Skeleton className="h-64 w-full" />
           </CardContent>
         </Card>
-      </div>
-    );
-  }
-
-  const getPaymentStatusLabel = (status: string) => {
-    switch (status) {
-      case 'paid': return 'Pago';
-      case 'pending_invoice': return 'Fatura Gerada';
-      case 'pending': return 'Pendente';
-      default: return status;
-    }
-  };
-
-  const getPaymentStatusClass = (status: string) => {
-    switch (status) {
-      case 'paid': return 'bg-green-100 text-green-700';
-      case 'pending_invoice': return 'bg-blue-100 text-blue-700';
-      case 'pending': return 'bg-yellow-100 text-yellow-700';
-      default: return 'bg-gray-100 text-gray-700';
-    }
-  };
-  
-  const handleRefresh = () => {
-    window.location.reload();
-  };
-
-  const handleViewOrder = (order: any) => {
-    setSelectedOrder(order);
-    setIsOrderDetailsOpen(true);
-  };
-
-  return (
-    <div className="space-y-6">
-      <motion.div 
-        className="flex justify-between items-center"
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <h1 className="text-3xl font-bold flex items-center gap-2">
-          <ShoppingBag className="h-7 w-7" />
-          Meus Pedidos
-        </h1>
-        <Button size="sm" variant="outline" className="flex items-center gap-1" onClick={handleRefresh}>
-          <RefreshCcw className="h-4 w-4" />
-          Atualizar
-        </Button>
-      </motion.div>
-
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.2 }}
-      >
-        <Card className="shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-xl">Histórico de Pedidos</CardTitle>
-            <Button variant="ghost" size="sm" className="flex items-center gap-1 text-xs">
-              <Filter className="h-3 w-3" /> Filtrar
-            </Button>
-          </CardHeader>
-          <CardContent>
-            {orders.length > 0 ? (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Número do Pedido</TableHead>
-                      <TableHead>Data</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Pagamento</TableHead>
-                      <TableHead className="text-right">Total</TableHead>
-                      <TableHead className="w-[100px]">Ações</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {orders.map((order) => (
-                      <motion.tr 
-                        key={order.id}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.3 }}
-                        className="group"
-                      >
-                        <TableCell className="font-medium">{order.order_number}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1">
-                            <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-                            {format(new Date(order.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
-                            order.status === 'completed' ? 'bg-green-100 text-green-700' :
-                            order.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
-                            order.status === 'processing' ? 'bg-blue-100 text-blue-700' :
-                            order.status === 'cancelled' || order.status === 'canceled' ? 'bg-red-100 text-red-700' :
-                            'bg-gray-100 text-gray-700'
-                          }`}>
-                            {order.status === 'completed' ? 'Concluído' :
-                             order.status === 'pending' ? 'Pendente' :
-                             order.status === 'processing' ? 'Processando' :
-                             order.status === 'cancelled' || order.status === 'canceled' ? 'Cancelado' :
-                             order.status}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
-                            getPaymentStatusClass(order.payment_status)
-                          }`}>
-                            {getPaymentStatusLabel(order.payment_status)}
-                          </span>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {formatPrice(order.total_amount)}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex justify-end gap-2">
-                            <Button 
-                              size="icon" 
-                              variant="ghost" 
-                              className="h-8 w-8" 
-                              onClick={() => handleViewOrder(order)}
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button size="icon" variant="ghost" className="h-8 w-8">
-                              <Download className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </motion.tr>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            ) : (
-              <div className="text-center py-12 space-y-4">
-                <div className="mx-auto w-16 h-16 bg-muted/30 rounded-full flex items-center justify-center">
-                  <ShoppingBag className="h-8 w-8 text-muted-foreground" />
-                </div>
-                <div>
-                  <p className="text-lg font-medium">Nenhum pedido encontrado</p>
-                  <p className="text-muted-foreground">Seus pedidos aparecerão aqui quando você fizer compras em nossa loja.</p>
-                </div>
-                <Button onClick={() => window.location.href = '/domains'} className="mt-4">
-                  Explorar produtos
-                </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </motion.div>
-
-      <OrderDetails 
-        order={selectedOrder} 
-        isOpen={isOrderDetailsOpen} 
-        setIsOpen={setIsOrderDetailsOpen} 
-      />
+      )}
+      
+      {/* Modal para detalhes do pedido seria implementado aqui */}
     </div>
   );
 };

@@ -5,8 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { PlusCircle, Check } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useContactProfiles } from "@/hooks/useContactProfiles";
 
@@ -21,7 +20,6 @@ interface DomainSelectionProps {
 }
 
 const DomainSelection = ({ config, onConfigChange }: DomainSelectionProps) => {
-  const navigate = useNavigate();
   const { profiles, isLoading: isLoadingProfiles } = useContactProfiles();
   const [domains, setDomains] = useState<string[]>([]);
   const [isLoadingDomains, setIsLoadingDomains] = useState(false);
@@ -75,10 +73,6 @@ const DomainSelection = ({ config, onConfigChange }: DomainSelectionProps) => {
       setDomainAvailable(isAvailable);
       setIsCheckingDomain(false);
     }, 1000);
-  };
-
-  const createNewProfile = () => {
-    navigate('/client/contact-profiles?returnTo=/products/email');
   };
 
   return (
@@ -156,18 +150,6 @@ const DomainSelection = ({ config, onConfigChange }: DomainSelectionProps) => {
                         )}
                       </SelectContent>
                     </Select>
-                    
-                    <div className="mt-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={createNewProfile}
-                        className="flex items-center"
-                      >
-                        <PlusCircle className="h-4 w-4 mr-1" />
-                        Criar novo perfil de contato
-                      </Button>
-                    </div>
                   </div>
                 </div>
               )}

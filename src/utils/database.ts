@@ -153,6 +153,46 @@ export const executeQuery = async (query: string, params?: any[]): Promise<Query
         };
       }
       
+      // Simular dados para faturas
+      if (query.toLowerCase().includes('select') && query.toLowerCase().includes('invoices')) {
+        return {
+          success: true,
+          data: [{
+            id: "1",
+            user_id: "user123",
+            invoice_number: "INV-20250502-1234",
+            amount: 15000,
+            status: "pending",
+            due_date: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(),
+            items: [{
+              title: "Domínio exemplo.ao",
+              price: 15000,
+              quantity: 1
+            }],
+            created_at: new Date().toISOString(),
+            order_id: "order123"
+          }],
+          rowCount: 1
+        };
+      }
+      
+      // Dados simulados para domínios
+      if (query.toLowerCase().includes('select') && query.toLowerCase().includes('domains')) {
+        return {
+          success: true,
+          data: [{
+            id: "domain1",
+            domain_name: "exemplo.ao",
+            status: "active",
+            expiry_date: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+            auto_renew: true,
+            is_locked: true,
+            whois_privacy: true
+          }],
+          rowCount: 1
+        };
+      }
+      
       return {
         success: true,
         data: [],
