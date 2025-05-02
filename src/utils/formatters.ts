@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 // Define a type for the admin settings
@@ -59,25 +60,6 @@ export const getCurrencyFormat = async (): Promise<string> => {
 };
 
 /**
- * Formats a price with the system-wide currency format
- */
-export const formatPrice = async (price: number | string): Promise<string> => {
-  const format = await getCurrencyFormat();
-  
-  // Convert price to a number if it's a string
-  const numericPrice = typeof price === 'string' ? parseFloat(price) : price;
-  
-  // Format the number based on the currency format setting
-  if (format === ',') {
-    // Use comma as decimal separator (e.g., European format)
-    return numericPrice.toString().replace('.', ',');
-  } else {
-    // Use dot as decimal separator (e.g., US/UK format)
-    return numericPrice.toString();
-  }
-};
-
-/**
  * Formats a price with the system-wide currency format (synchronous version)
  * This uses the cached format or falls back to the default
  */
@@ -97,8 +79,8 @@ export const formatPriceSync = (price: number | string): string => {
   }
 };
 
-// Initialize by fetching the current format
-getCurrencyFormat().catch(console.error);
+// Use synchronous version only in component renders
+export const formatPrice = formatPriceSync;
 
 // Add parsing function if it doesn't exist
 export const parsePrice = (price: string): number => {
@@ -112,3 +94,6 @@ export const parsePrice = (price: string): number => {
   
   return parseFloat(cleaned);
 };
+
+// Initialize by fetching the current format
+getCurrencyFormat().catch(console.error);
