@@ -7,44 +7,45 @@ import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { CartItem } from '@/types/cart';
 
-export const useOrderSubmission = (formData: any, paymentMethod: string | null) => {
+export const useSaveOrder = () => {
   const [isSaving, setIsSaving] = useState(false);
   const { items, total, clearCart } = useCart();
   const { user } = useSupabaseAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = async () => {
-    if (!user || !paymentMethod) {
-      toast.error('Para finalizar o pedido, faça login e selecione um método de pagamento');
-      return;
+  const saveCartAsOrder = async (options: {
+    paymentMethodId: string | null;
+    clientDetails: {
+      name: string;
+      email: string;
+      phone: string;
+      address: string;
+    };
+    skipPayment?: boolean;
+  }) => {
+    if (!user) {
+      toast.error('Para finalizar o pedido, faça login');
+      return null;
     }
 
     try {
       setIsSaving(true);
       
-      // Format client details
-      const clientDetails = {
-        name: formData.name,
-        email: formData.email,
-        phone: formData.phone,
-        address: formData.address,
-      };
-
       // Generate order number
       const orderNumber = `ORD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
-      // Create order in database
+      // Create order in database 
       const { data: orderData, error: orderError } = await supabase
         .from('orders')
         .insert({
           order_number: orderNumber,
           user_id: user.id,
           total_amount: total,
-          items: items,
+          items: JSON.stringify(items), // Convert items to JSON string
           status: 'pending',
-          payment_method: paymentMethod,
-          payment_status: 'pending',
-          client_details: clientDetails
+          payment_method: options.paymentMethodId,
+          payment_status: options.skipPayment ? 'pending_invoice' : 'pending',
+          client_details: options.clientDetails
         })
         .select('id')
         .single();
@@ -65,13 +66,14 @@ export const useOrderSubmission = (formData: any, paymentMethod: string | null) 
         }
       }
 
-      // Success - clear cart and redirect
+      // Success - clear cart
       toast.success('Pedido realizado com sucesso!');
-      clearCart();
-      navigate(`/client/orders`);
+      
+      return orderData;
     } catch (error: any) {
       console.error('Error saving order:', error);
       toast.error(`Erro ao salvar pedido: ${error.message}`);
+      return null;
     } finally {
       setIsSaving(false);
     }
@@ -79,7 +81,7 @@ export const useOrderSubmission = (formData: any, paymentMethod: string | null) 
 
   // Helper function to determine item type
   const determineItemType = (item: CartItem): 'domain' | 'service' | 'other' => {
-    const name = item.name.toLowerCase();
+    const name = (item.name || '').toLowerCase();
     
     if (name.includes('domínio') || name.includes('dominio') || 
         name.includes('domain') || item.type === 'domain') {
@@ -89,7 +91,8 @@ export const useOrderSubmission = (formData: any, paymentMethod: string | null) 
     if (name.includes('hostin') || name.includes('vps') || 
         name.includes('servidor') || name.includes('server') || 
         name.includes('wordpress') || name.includes('email') || 
-        name.includes('cpanel') || item.type === 'service') {
+        name.includes('cpanel') || item.type === 'service' || 
+        item.service_type) {
       return 'service';
     }
     
@@ -98,12 +101,12 @@ export const useOrderSubmission = (formData: any, paymentMethod: string | null) 
 
   // Process domain items
   const processDomain = async (item: CartItem, userId: string) => {
-    const domain = item.name.split(' ')[0]; // Extract domain name
+    const domain = item.domain || item.name.split(' ')[0]; // Extract domain name
     const registrationDate = new Date();
     const expiryDate = new Date();
     expiryDate.setFullYear(expiryDate.getFullYear() + 1); // Default 1 year registration
     
-    await supabase.from('domains').insert({
+    await supabase.from('client_domains').insert({
       domain_name: domain,
       user_id: userId,
       status: 'pending',
@@ -111,9 +114,7 @@ export const useOrderSubmission = (formData: any, paymentMethod: string | null) 
       expiry_date: expiryDate.toISOString(),
       auto_renew: true,
       whois_privacy: false,
-      is_locked: true,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      is_locked: true
     });
   };
 
@@ -124,7 +125,7 @@ export const useOrderSubmission = (formData: any, paymentMethod: string | null) 
     
     // Determine service type
     let serviceType = 'hosting';
-    const name = item.name.toLowerCase();
+    const name = (item.name || '').toLowerCase();
     
     if (name.includes('email')) {
       serviceType = 'email';
@@ -136,12 +137,10 @@ export const useOrderSubmission = (formData: any, paymentMethod: string | null) 
       serviceType = 'wordpress';
     }
     
-    await supabase.from('services').insert({
+    await supabase.from('client_services').insert({
       name: item.name,
       service_type: serviceType,
       status: 'pending',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
       renewal_date: renewalDate.toISOString(),
       price_monthly: item.price / 12, // Estimate monthly price
       price_yearly: item.price,
@@ -150,5 +149,5 @@ export const useOrderSubmission = (formData: any, paymentMethod: string | null) 
     });
   };
 
-  return { handleSubmit, isSaving };
+  return { saveCartAsOrder, isSaving };
 };

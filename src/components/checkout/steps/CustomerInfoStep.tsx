@@ -4,10 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CardTitle } from "@/components/ui/card";
 import { ArrowRight } from "lucide-react";
-import { FieldErrors } from "react-hook-form";
+import { FieldErrors, UseFormRegister } from "react-hook-form";
 
 interface CustomerInfoStepProps {
-  register: any;
+  register: UseFormRegister<any>;
   errors: FieldErrors;
   nextStep: () => void;
 }

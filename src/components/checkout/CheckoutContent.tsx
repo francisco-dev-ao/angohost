@@ -106,7 +106,7 @@ const CheckoutContent = () => {
   // Handle form submission wrapper for OrderSummary
   const onSubmitWrapper = async (e: React.FormEvent) => {
     e.preventDefault();
-    handleSubmit(submitOrder)();
+    await submitOrder();
   };
 
   if (items.length === 0) {

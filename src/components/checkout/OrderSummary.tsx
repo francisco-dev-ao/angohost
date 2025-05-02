@@ -7,15 +7,18 @@ import { formatPrice } from "@/utils/formatters";
 import { Lock, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { Separator } from "@/components/ui/separator";
+import { CartItem } from "@/types/cart";
+import { SubmitHandler } from "react-hook-form";
 
 interface OrderSummaryProps {
-  onSubmit: (e: React.FormEvent) => Promise<void>;
   currentStep: number;
   canProceed: boolean;
+  onSubmit: (e: React.FormEvent) => Promise<void>;
 }
 
 const OrderSummary = ({ onSubmit, currentStep, canProceed }: OrderSummaryProps) => {
-  const { items, subtotal, total } = useCart();
+  const { items, total } = useCart();
+  const subtotal = items.reduce((acc, item) => acc + (item.price * item.quantity), 0);
 
   return (
     <Card className="sticky top-8">
