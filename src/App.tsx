@@ -15,6 +15,8 @@ import { AdminRoute } from '@/components/AdminRoute';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import Packages from './pages/Packages';
 import PackageDetails from './pages/PackageDetails';
+import Hosting from './pages/Hosting';
+import HostingDetails from './pages/HostingDetails';
 
 function App() {
   const { loading } = useSupabaseAuth();
@@ -43,6 +45,8 @@ function App() {
         <Route path="/domains" element={<Domains />} />
         <Route path="/packages" element={<Packages />} />
         <Route path="/packages/:id" element={<PackageDetails />} />
+        <Route path="/hosting" element={<Hosting />} />
+        <Route path="/hosting/:planSlug" element={<HostingDetails />} />
         <Route path="/terms" element={<NotFound />} />
         <Route path="/privacy" element={<NotFound />} />
         <Route path="/cart" element={<Cart />} />
@@ -54,6 +58,7 @@ function App() {
         <Route path="/client/invoices" element={<ProtectedRoute><NotFound /></ProtectedRoute>} />
         <Route path="/client/orders" element={<ProtectedRoute><NotFound /></ProtectedRoute>} />
         <Route path="/client/profile" element={<ProtectedRoute><NotFound /></ProtectedRoute>} />
+        <Route path="/client/domains" element={<ProtectedRoute><NotFound /></ProtectedRoute>} />
 
         {/* Admin Routes */}
         <Route path="/admin" element={<AdminRoute><NotFound /></AdminRoute>} />

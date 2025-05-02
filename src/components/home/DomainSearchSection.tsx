@@ -1,16 +1,16 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
 import DomainValidator from '@/components/DomainValidator';
 
-// Define the props interface
 interface DomainSearchSectionProps {
   onDomainSelected?: (domain: string) => void;
 }
 
 const DomainSearchSection: React.FC<DomainSearchSectionProps> = ({ onDomainSelected }) => {
-  // If onDomainSelected is provided, use the DomainValidator component
+  // Se onDomainSelected for fornecido, use o componente DomainValidator
   if (onDomainSelected) {
     return (
       <div className="w-full max-w-3xl mx-auto">
@@ -19,7 +19,7 @@ const DomainSearchSection: React.FC<DomainSearchSectionProps> = ({ onDomainSelec
     );
   }
 
-  // Otherwise use a simpler search form that redirects to /domains
+  // Caso contrário, use um formulário de pesquisa mais simples que redireciona para /domains
   return (
     <div className="w-full max-w-3xl mx-auto">
       <form action="/domains" method="get" className="flex gap-2">
