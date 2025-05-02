@@ -1,117 +1,111 @@
-
-import React, { useEffect } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
-import { SidebarProvider } from './components/ui/sidebar';
-import { CartProvider } from './contexts/CartContext';
-import { ThemeProvider } from './components/ui/theme-provider';
-
-// Import pages that exist in the read-only files
-import About from './pages/About';
-import Contact from './pages/Contact';
-import NotFound from './pages/NotFound';
-import Register from './pages/Register';
-import Auth from './pages/Auth';
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster } from 'sonner';
+import { ThemeProvider } from "@/components/theme-provider"
 import Index from './pages/Index';
-import Domains from './pages/Domains';
-import Checkout from './pages/Checkout';
-import EnhancedCheckout from './pages/EnhancedCheckout';
-import AdminIndex from './pages/AdminIndex';
-import AdminDomains from './pages/admin/AdminDomains';
-import AdminUsers from './pages/admin/AdminUsers';
-import AdminProducts from './pages/admin/AdminProducts';
-import AdminDomainExtensions from './pages/admin/AdminDomainExtensions';
-import AdminServicePlans from './pages/admin/AdminServicePlans';
-import AdminPageContents from './pages/admin/AdminPageContents';
-import AdminProtectedRoute from './components/admin/AdminProtectedRoute';
-import AdminOrders from './pages/admin/AdminOrders';
-import AdminInvoices from './pages/admin/AdminInvoices';
-import AdminAbandonedCarts from './pages/admin/AdminAbandonedCarts';
-import AdminEmailTemplates from './pages/admin/AdminEmailTemplates';
-import AdminSettings from './pages/admin/AdminSettings';
-import AdminPaymentMethods from './pages/admin/AdminPaymentMethods';
-
-// Import client pages
-import ClientLayout from './pages/client/ClientLayout';
-import ClientDomains from './pages/client/ClientDomains';
-import ClientProfile from './pages/client/ClientProfile';
+import Contact from './pages/Contact';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import ClientArea from './pages/client/ClientArea';
 import ClientServices from './pages/client/ClientServices';
-import ClientArea from './pages/ClientArea';
 import ClientInvoices from './pages/client/ClientInvoices';
+import ClientOrders from './pages/client/ClientOrders';
+import ClientProfile from './pages/client/ClientProfile';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminInvoices from './pages/admin/AdminInvoices';
+import AdminOrders from './pages/admin/AdminOrders';
+import AdminServices from './pages/admin/AdminServices';
+import AdminUsers from './pages/admin/AdminUsers';
+import AdminSettingsPage from './pages/admin/AdminSettingsPage';
+import AdminProducts from './pages/admin/AdminProducts';
+import AdminServicePlans from './pages/admin/AdminServicePlans';
+import AdminHosting from './pages/admin/AdminHosting';
+import AdminHostingCreate from './pages/admin/AdminHostingCreate';
+import AdminHostingEdit from './pages/admin/AdminHostingEdit';
+import AdminProductsAdd from './pages/admin/AdminProductsAdd';
+import AdminProductsEdit from './pages/admin/AdminProductsEdit';
+import AdminServicePlansAdd from './pages/admin/AdminServicePlansAdd';
+import AdminServicePlansEdit from './pages/admin/AdminServicePlansEdit';
+import Cart from './pages/Cart';
+import Checkout from './pages/Checkout';
+import Domains from './pages/Domains';
 import CpanelHosting from './pages/CpanelHosting';
-import ProfessionalEmail from './pages/ProfessionalEmail';
-import ExchangeOnline from './pages/ExchangeOnline';
-import VpsHosting from './pages/VpsHosting';
 import WordPressHosting from './pages/WordPressHosting';
-import DedicatedServers from './pages/DedicatedServers';
-import DomainTransfer from './pages/DomainTransfer';
+import EmailMarketing from './pages/EmailMarketing';
+import TermsOfService from './pages/TermsOfService';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import NotFound from './pages/NotFound';
+import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
+import { ProtectedRoute } from '@/components/ProtectedRoute';
+import { AdminRoute } from '@/components/AdminRoute';
+import CpanelHostingPurchase from './pages/CpanelHostingPurchase';
 
 function App() {
+  const { isLoading } = useSupabaseAuth();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return null;
+  }
+
   return (
-    <ThemeProvider>
-      <CartProvider>
-        <SidebarProvider>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/domains" element={<Domains />} />
-            <Route path="/domain-transfer" element={<DomainTransfer />} />
-            <Route path="/cpanel-hosting" element={<CpanelHosting />} />
-            <Route path="/wordpress-hosting" element={<WordPressHosting />} />
-            <Route path="/vps-hosting" element={<VpsHosting />} />
-            <Route path="/dedicated-servers" element={<DedicatedServers />} />
-            <Route path="/professional-email" element={<ProfessionalEmail />} />
-            <Route path="/exchange-online" element={<ExchangeOnline />} />
-            <Route path="/hosting" element={<CpanelHosting />} />
-            <Route path="/email" element={<ProfessionalEmail />} />
-            <Route path="/vps" element={<VpsHosting />} />
-            
-            {/* Redirect cart to enhanced-checkout */}
-            <Route path="/cart" element={<Navigate to="/enhanced-checkout" replace />} />
-            
-            <Route path="/checkout" element={<Checkout />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/login" element={<Navigate to="/auth" replace />} /> {/* Redirecting to new Auth page */}
-            <Route path="/about" element={<About />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/enhanced-checkout" element={<EnhancedCheckout />} />
+    <BrowserRouter>
+      <Toaster />
+      <ThemeProvider
+        defaultTheme="system"
+        storageKey="vite-react-theme"
+      >
+      
+      <Routes>
+        <Route path="/" element={<Index />} />
+        <Route path="/contact" element={<Contact />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/domains" element={<Domains />} />
+        <Route path="/products/cpanel" element={<CpanelHosting />} />
+        <Route path="/products/wordpress" element={<WordPressHosting />} />
+        <Route path="/products/email-marketing" element={<EmailMarketing />} />
+        <Route path="/terms" element={<TermsOfService />} />
+        <Route path="/privacy" element={<PrivacyPolicy />} />
+        <Route path="/cart" element={<Cart />} />
+        <Route path="/checkout" element={<Checkout />} />
+        
+        {/* Client Routes */}
+        <Route path="/client" element={<ProtectedRoute><ClientArea /></ProtectedRoute>} />
+        <Route path="/client/services" element={<ProtectedRoute><ClientServices /></ProtectedRoute>} />
+        <Route path="/client/invoices" element={<ProtectedRoute><ClientInvoices /></ProtectedRoute>} />
+        <Route path="/client/orders" element={<ProtectedRoute><ClientOrders /></ProtectedRoute>} />
+        <Route path="/client/profile" element={<ProtectedRoute><ClientProfile /></ProtectedRoute>} />
 
-            {/* Admin Routes */}
-            <Route path="/admin" element={<AdminProtectedRoute><AdminIndex /></AdminProtectedRoute>} />
-            <Route path="/admin/domains" element={<AdminProtectedRoute><AdminDomains /></AdminProtectedRoute>} />
-            <Route path="/admin/users" element={<AdminProtectedRoute><AdminUsers /></AdminProtectedRoute>} />
-            <Route path="/admin/products" element={<AdminProtectedRoute><AdminProducts /></AdminProtectedRoute>} />
-            <Route path="/admin/domain-extensions" element={<AdminProtectedRoute><AdminDomainExtensions /></AdminProtectedRoute>} />
-            <Route path="/admin/service-plans" element={<AdminProtectedRoute><AdminServicePlans /></AdminProtectedRoute>} />
-            <Route path="/admin/page-contents" element={<AdminProtectedRoute><AdminPageContents /></AdminProtectedRoute>} />
-            <Route path="/admin/orders" element={<AdminProtectedRoute><AdminOrders /></AdminProtectedRoute>} />
-            <Route path="/admin/invoices" element={<AdminProtectedRoute><AdminInvoices /></AdminProtectedRoute>} />
-            <Route path="/admin/payment-methods" element={<AdminProtectedRoute><AdminPaymentMethods /></AdminProtectedRoute>} />
-            <Route path="/admin/abandoned-carts" element={<AdminProtectedRoute><AdminAbandonedCarts /></AdminProtectedRoute>} />
-            <Route path="/admin/email-templates" element={<AdminProtectedRoute><AdminEmailTemplates /></AdminProtectedRoute>} />
-            <Route path="/admin/settings" element={<AdminProtectedRoute><AdminSettings /></AdminProtectedRoute>} />
+        {/* Admin Routes */}
+        <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+        <Route path="/admin/invoices" element={<AdminRoute><AdminInvoices /></AdminRoute>} />
+        <Route path="/admin/orders" element={<AdminRoute><AdminOrders /></AdminRoute>} />
+        <Route path="/admin/services" element={<AdminRoute><AdminServices /></AdminRoute>} />
+        <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
+        <Route path="/admin/settings" element={<AdminRoute><AdminSettingsPage /></AdminRoute>} />
+        <Route path="/admin/products" element={<AdminRoute><AdminProducts /></AdminRoute>} />
+        <Route path="/admin/products/add" element={<AdminRoute><AdminProductsAdd /></AdminRoute>} />
+        <Route path="/admin/products/edit/:id" element={<AdminRoute><AdminProductsEdit /></AdminRoute>} />
+        <Route path="/admin/service-plans" element={<AdminRoute><AdminServicePlans /></AdminRoute>} />
+        <Route path="/admin/service-plans/add" element={<AdminRoute><AdminServicePlansAdd /></AdminRoute>} />
+        <Route path="/admin/service-plans/edit/:id" element={<AdminRoute><AdminServicePlansEdit /></AdminRoute>} />
+        <Route path="/admin/hosting" element={<AdminRoute><AdminHosting /></AdminRoute>} />
+        <Route path="/admin/hosting/create" element={<AdminRoute><AdminHostingCreate /></AdminRoute>} />
+        <Route path="/admin/hosting/edit/:id" element={<AdminRoute><AdminHostingEdit /></AdminRoute>} />
 
-            {/* Client Routes - Support both /client/* and direct access to /client-area */}
-            <Route path="/client" element={<ClientLayout />}>
-              <Route index element={<ClientDomains />} />
-              <Route path="domains" element={<ClientDomains />} />
-              <Route path="profile" element={<ClientProfile />} />
-              <Route path="services" element={<ClientServices />} />
-              <Route path="orders" element={<ClientArea />} />
-              <Route path="invoices" element={<ClientInvoices />} />
-            </Route>
-
-            {/* Direct routes */}
-            <Route path="/client-area" element={<ClientArea />} />
-            <Route path="/client-area/*" element={<ClientArea />} />
-            <Route path="/services" element={<Navigate to="/client/services" replace />} />
-            <Route path="/orders" element={<Navigate to="/client/orders" replace />} />
-            <Route path="/invoices" element={<Navigate to="/client/invoices" replace />} />
-
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </SidebarProvider>
-      </CartProvider>
-    </ThemeProvider>
+        {/* Add the new purchase routes */}
+        <Route path="/products/cpanel/purchase" element={<CpanelHostingPurchase />} />
+        
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+      
+      </ThemeProvider>
+    </BrowserRouter>
   );
 }
 

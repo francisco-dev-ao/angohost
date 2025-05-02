@@ -1,69 +1,114 @@
+import { supabase } from '@/integrations/supabase/client';
+
+// Define a type for the admin settings
+type AdminSettings = {
+  currencyFormat: string;
+  [key: string]: any;
+};
+
+// Cache for currency format to avoid excessive requests
+let cachedFormat: string | null = null;
+let formatFetchPromise: Promise<string> | null = null;
 
 /**
- * Format a number as a price in Kwanza (KZ)
+ * Fetches the current currency format from admin settings
  */
-export const formatPrice = (price: number | string): string => {
-  const value = typeof price === 'string' ? parseFloat(price) : price;
+export const getCurrencyFormat = async (): Promise<string> => {
+  // If we already have a cached format, return it immediately
+  if (cachedFormat !== null) {
+    return cachedFormat;
+  }
   
-  // Format with dot as thousand separator and no decimal places, with kz suffix
-  return new Intl.NumberFormat('pt-AO', {
-    style: 'decimal',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-    useGrouping: true,
-  }).format(value) + 'kz';
-};
-
-/**
- * Parse a formatted price string back to a number
- */
-export const parsePrice = (formattedPrice: string): number => {
-  // Remove 'kz' suffix and any non-numeric characters except for commas and dots
-  const cleanedPrice = formattedPrice.replace(/kz/gi, '').trim();
-  // Replace dots (thousand separators) and convert to number
-  return parseFloat(cleanedPrice.replace(/\./g, ''));
-};
-
-/**
- * Format a date string to a human readable format
- */
-export const formatDate = (dateString: string): string => {
-  const date = new Date(dateString);
-  return date.toLocaleDateString('pt-AO', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
+  // If there's already a fetch in progress, wait for it
+  if (formatFetchPromise !== null) {
+    return formatFetchPromise;
+  }
+  
+  // Start a new fetch
+  formatFetchPromise = new Promise<string>(async (resolve) => {
+    try {
+      const { data, error } = await supabase
+        .from('admin_settings')
+        .select('settings')
+        .eq('id', 'general_settings')
+        .single();
+      
+      if (!error && data && data.settings) {
+        // Cast settings to AdminSettings type
+        const settings = data.settings as AdminSettings;
+        if (settings.currencyFormat) {
+          cachedFormat = settings.currencyFormat;
+          resolve(settings.currencyFormat);
+          return;
+        }
+      }
+      
+      // Default to dot as separator if not found
+      cachedFormat = '.';
+      resolve('.');
+    } catch (error) {
+      console.error('Error fetching currency format:', error);
+      cachedFormat = '.';  // Default
+      resolve('.');
+    } finally {
+      formatFetchPromise = null;
+    }
   });
-};
-
-/**
- * Format a date string to a shorter format (DD/MM/YYYY)
- */
-export const formatDateShort = (dateString: string): string => {
-  const date = new Date(dateString);
-  return date.toLocaleDateString('pt-AO', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  });
-};
-
-/**
- * Format bytes to human readable format
- */
-export const formatBytes = (bytes: number, decimals = 2): string => {
-  if (bytes === 0) return '0 Bytes';
   
-  const k = 1024;
-  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  
-  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(decimals))} ${sizes[i]}`;
+  return formatFetchPromise;
 };
 
 /**
- * Format a number as percentage
+ * Formats a price with the system-wide currency format
  */
-export const formatPercent = (value: number): string => {
-  return `${(value * 100).toFixed(0)}%`;
+export const formatPrice = async (price: number | string): Promise<string> => {
+  const format = await getCurrencyFormat();
+  
+  // Convert price to a number if it's a string
+  const numericPrice = typeof price === 'string' ? parseFloat(price) : price;
+  
+  // Format the number based on the currency format setting
+  if (format === ',') {
+    // Use comma as decimal separator (e.g., European format)
+    return numericPrice.toString().replace('.', ',');
+  } else {
+    // Use dot as decimal separator (e.g., US/UK format)
+    return numericPrice.toString();
+  }
+};
+
+/**
+ * Formats a price with the system-wide currency format (synchronous version)
+ * This uses the cached format or falls back to the default
+ */
+export const formatPriceSync = (price: number | string): string => {
+  const format = cachedFormat || '.';
+  
+  // Convert price to a number if it's a string
+  const numericPrice = typeof price === 'string' ? parseFloat(price) : price;
+  
+  // Format the number based on the currency format setting
+  if (format === ',') {
+    // Use comma as decimal separator (e.g., European format)
+    return numericPrice.toString().replace('.', ',');
+  } else {
+    // Use dot as decimal separator (e.g., US/UK format)
+    return numericPrice.toString();
+  }
+};
+
+// Initialize by fetching the current format
+getCurrencyFormat().catch(console.error);
+
+// Add parsing function if it doesn't exist
+export const parsePrice = (price: string): number => {
+  if (!price) return 0;
+  
+  // First remove any currency symbols and spaces
+  let cleaned = price.replace(/[^0-9.,]/g, '');
+  
+  // Replace commas with dots for calculation
+  cleaned = cleaned.replace(',', '.');
+  
+  return parseFloat(cleaned);
 };

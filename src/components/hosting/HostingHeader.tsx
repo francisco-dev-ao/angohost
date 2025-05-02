@@ -1,17 +1,34 @@
 
 import React from "react";
+import { Button } from "@/components/ui/button";
 
-const HostingHeader = () => {
+interface HostingHeaderProps {
+  title?: string;
+  description?: string;
+  totalServices?: number;
+  onCreateNew?: () => void;
+}
+
+const HostingHeader = ({ 
+  title = "Hospedagem", 
+  description = "Gerenciar serviços de hospedagem",
+  totalServices,
+  onCreateNew
+}: HostingHeaderProps) => {
   return (
-    <div className="bg-muted/50 py-12">
-      <div className="container">
-        <div className="max-w-3xl mx-auto text-center">
-          <h1 className="text-4xl font-bold mb-4">Hospedagem cPanel</h1>
-          <p className="text-lg text-muted-foreground mb-6">
-            Nossa hospedagem cPanel oferece alto desempenho, segurança e facilidade de uso para gerenciar seus sites.
-          </p>
-        </div>
+    <div className="flex items-center justify-between mb-8">
+      <div>
+        <h2 className="text-3xl font-bold tracking-tight">{title}</h2>
+        <p className="text-muted-foreground">
+          {description}
+          {totalServices !== undefined && ` (${totalServices} serviços)`}
+        </p>
       </div>
+      {onCreateNew && (
+        <Button onClick={onCreateNew}>
+          Criar Novo Serviço
+        </Button>
+      )}
     </div>
   );
 };
