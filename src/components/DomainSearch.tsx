@@ -11,10 +11,6 @@ import { useDomainExtensions } from '@/hooks/useDomainExtensions';
 import { checkDomainAvailability } from '@/utils/dnsResolver';
 import { DomainCheckResult } from '@/types/domain';
 
-interface DomainSearchProps {
-  onDomainSearch?: (domain: string) => void;
-}
-
 interface DomainResult {
   domain: string;
   available: boolean;
@@ -22,7 +18,7 @@ interface DomainResult {
   records?: any[];
 }
 
-const DomainSearch = ({ onDomainSearch }: DomainSearchProps) => {
+const DomainSearch = () => {
   const [domain, setDomain] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   const [results, setResults] = useState<DomainResult[]>([]);
@@ -43,11 +39,6 @@ const DomainSearch = ({ onDomainSearch }: DomainSearchProps) => {
     
     try {
       const baseSearch = domain.includes('.') ? domain.split('.')[0] : domain;
-      
-      // Call the onDomainSearch callback if provided
-      if (onDomainSearch) {
-        onDomainSearch(domain);
-      }
       
       // Preparar verificações para todas as extensões
       const extensionsToCheck = extensions.map(ext => ({

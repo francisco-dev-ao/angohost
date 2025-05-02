@@ -1,14 +1,9 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { Domain, Service } from '@/types/client';
 import { toast } from 'sonner';
-
-// Add the AdminSettings type definition
-type AdminSettings = {
-  currencyFormat: string;
-  [key: string]: any;
-};
 
 export const useRealtimeClientDashboard = () => {
   const { user } = useSupabaseAuth();
@@ -40,12 +35,8 @@ export const useRealtimeClientDashboard = () => {
         .eq('id', 'general_settings')
         .single();
       
-      if (!error && data && data.settings) {
-        // Cast settings to AdminSettings type
-        const settings = data.settings as AdminSettings;
-        if (settings.currencyFormat) {
-          setCurrencyFormat(settings.currencyFormat);
-        }
+      if (!error && data && data.settings && data.settings.currencyFormat) {
+        setCurrencyFormat(data.settings.currencyFormat);
       }
     } catch (error) {
       console.error('Error fetching currency format:', error);
