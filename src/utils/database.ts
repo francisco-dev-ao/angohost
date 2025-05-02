@@ -124,7 +124,40 @@ export const executeQuery = async (query: string, params?: any[]): Promise<Query
         typeof window !== 'undefined' && 
         (window as any).__mockDbResponses) {
       console.log('Usando simulação de banco de dados para desenvolvimento');
-      return (window as any).__mockDbResponses.executeQuery;
+      
+      // Simular sucesso nas operações comuns em modo de desenvolvimento
+      if (query.toLowerCase().includes('select') && query.toLowerCase().includes('profiles')) {
+        return {
+          success: true,
+          data: [{
+            full_name: "Cliente de Teste",
+            email: "cliente@exemplo.com",
+            phone: "+244 923 456 789",
+            address: "Luanda, Angola"
+          }],
+          rowCount: 1
+        };
+      }
+      
+      if (query.toLowerCase().includes('select') && query.toLowerCase().includes('payment_methods')) {
+        return {
+          success: true,
+          data: [{
+            id: "bank_transfer_default",
+            name: "Transferência Bancária",
+            is_active: true,
+            payment_type: "bank_transfer",
+            description: "Pague por transferência bancária e envie o comprovante"
+          }],
+          rowCount: 1
+        };
+      }
+      
+      return {
+        success: true,
+        data: [],
+        rowCount: 0
+      };
     }
     
     const response = await fetch(`${apiUrl}/db/execute-query`, {
@@ -176,8 +209,8 @@ export const executeQuery = async (query: string, params?: any[]): Promise<Query
 if (import.meta.env.DEV && typeof window !== 'undefined') {
   console.log('Usando implementação de banco de dados para ambiente:', import.meta.env.MODE);
   
-  // Use mocks only if explicitly configured
-  if (import.meta.env.VITE_USE_MOCK_DB === 'true') {
+  // Use mocks only if explicitly configured or if we're in development mode
+  if (import.meta.env.VITE_USE_MOCK_DB === 'true' || import.meta.env.DEV) {
     console.warn('Usando implementação simulada de banco de dados para desenvolvimento');
     
     // Mocks to test UI without backend
@@ -195,3 +228,16 @@ if (import.meta.env.DEV && typeof window !== 'undefined') {
     };
   }
 }
+
+// Configuração para PDF de faturas no formato A4
+export const invoicePdfConfig = {
+  format: 'A4',
+  width: '210mm',
+  height: '297mm',
+  margin: {
+    top: '20mm',
+    bottom: '20mm',
+    left: '15mm',
+    right: '15mm'
+  }
+};

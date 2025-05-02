@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   Card,
   CardContent,
@@ -22,9 +22,102 @@ import { ShoppingBag, RefreshCcw, Filter, Download, Eye, Clock } from 'lucide-re
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatPrice } from '@/utils/formatters';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useLocation, useNavigate } from 'react-router-dom';
+
+const OrderDetails = ({ order, isOpen, setIsOpen }: { order: any, isOpen: boolean, setIsOpen: (open: boolean) => void }) => {
+  if (!order) return null;
+  
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogContent className="sm:max-w-4xl">
+        <DialogHeader>
+          <DialogTitle>Detalhes do Pedido #{order.order_number}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-6">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <h3 className="font-medium text-sm text-muted-foreground">Status do Pedido</h3>
+              <p className="font-semibold">
+                {order.status === 'completed' ? 'Concluído' :
+                 order.status === 'pending' ? 'Pendente' :
+                 order.status === 'processing' ? 'Processando' :
+                 order.status === 'cancelled' || order.status === 'canceled' ? 'Cancelado' :
+                 order.status}
+              </p>
+            </div>
+            <div>
+              <h3 className="font-medium text-sm text-muted-foreground">Status do Pagamento</h3>
+              <p className="font-semibold">
+                {order.payment_status === 'paid' ? 'Pago' :
+                 order.payment_status === 'pending_invoice' ? 'Fatura Gerada' :
+                 order.payment_status === 'pending' ? 'Pendente' :
+                 order.payment_status}
+              </p>
+            </div>
+            <div>
+              <h3 className="font-medium text-sm text-muted-foreground">Data do Pedido</h3>
+              <p className="font-semibold">{format(new Date(order.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })}</p>
+            </div>
+            <div>
+              <h3 className="font-medium text-sm text-muted-foreground">Valor Total</h3>
+              <p className="font-semibold">{formatPrice(order.total_amount)}</p>
+            </div>
+          </div>
+          
+          <div>
+            <h3 className="font-medium mb-2">Itens do Pedido</h3>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Item</TableHead>
+                  <TableHead>Quantidade</TableHead>
+                  <TableHead className="text-right">Preço</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {order.items && order.items.map((item: any, index: number) => (
+                  <TableRow key={index}>
+                    <TableCell className="font-medium">
+                      {item.name}
+                      {item.domain && <span className="block text-sm text-muted-foreground">{item.domain}</span>}
+                    </TableCell>
+                    <TableCell>{item.quantity}</TableCell>
+                    <TableCell className="text-right">{formatPrice(item.price * item.quantity)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
 
 const OrdersPage = () => {
   const { orders, loading } = useOrders();
+  const [selectedOrder, setSelectedOrder] = useState<any>(null);
+  const [isOrderDetailsOpen, setIsOrderDetailsOpen] = useState(false);
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // Verificar se há um parâmetro de pedido na URL
+  useEffect(() => {
+    const queryParams = new URLSearchParams(location.search);
+    const orderParam = queryParams.get('order');
+    
+    if (orderParam && orders.length > 0) {
+      const foundOrder = orders.find(order => order.id === orderParam);
+      if (foundOrder) {
+        setSelectedOrder(foundOrder);
+        setIsOrderDetailsOpen(true);
+        
+        // Limpar o parâmetro da URL após processar
+        navigate('/client/orders', { replace: true });
+      }
+    }
+  }, [location.search, orders, navigate]);
 
   if (loading) {
     return (
@@ -65,6 +158,11 @@ const OrdersPage = () => {
   
   const handleRefresh = () => {
     window.location.reload();
+  };
+
+  const handleViewOrder = (order: any) => {
+    setSelectedOrder(order);
+    setIsOrderDetailsOpen(true);
   };
 
   return (
@@ -154,10 +252,15 @@ const OrdersPage = () => {
                         </TableCell>
                         <TableCell>
                           <div className="flex justify-end gap-2">
-                            <Button size="icon" variant="ghost" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Button 
+                              size="icon" 
+                              variant="ghost" 
+                              className="h-8 w-8" 
+                              onClick={() => handleViewOrder(order)}
+                            >
                               <Eye className="h-4 w-4" />
                             </Button>
-                            <Button size="icon" variant="ghost" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Button size="icon" variant="ghost" className="h-8 w-8">
                               <Download className="h-4 w-4" />
                             </Button>
                           </div>
@@ -184,6 +287,12 @@ const OrdersPage = () => {
           </CardContent>
         </Card>
       </motion.div>
+
+      <OrderDetails 
+        order={selectedOrder} 
+        isOpen={isOrderDetailsOpen} 
+        setIsOpen={setIsOrderDetailsOpen} 
+      />
     </div>
   );
 };

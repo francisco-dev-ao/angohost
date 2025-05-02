@@ -19,8 +19,8 @@ const ClientInfoSection = ({ formData, profileLoaded, onChange }: ClientInfoSect
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Dados pessoais</CardTitle>
-        <CardDescription>Informações para faturamento</CardDescription>
+        <CardTitle>Informações Pessoais</CardTitle>
+        <CardDescription>Atualize seus dados pessoais e informações de contato</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="grid gap-4 md:grid-cols-2">

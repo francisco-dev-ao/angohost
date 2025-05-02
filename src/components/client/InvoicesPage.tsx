@@ -147,14 +147,18 @@ const InvoicesPage = () => {
                         </TableCell>
                         <TableCell>
                           <div className="flex justify-end gap-2">
-                            <Button size="icon" variant="ghost" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity" 
-                                   onClick={() => handleViewInvoice(invoice)}>
+                            <Button 
+                              size="icon" 
+                              variant="ghost" 
+                              className="h-8 w-8" 
+                              onClick={() => handleViewInvoice(invoice)}
+                            >
                               <Eye className="h-4 w-4" />
                             </Button>
                             <Button 
                               size="icon" 
                               variant="ghost" 
-                              className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                              className="h-8 w-8"
                               onClick={() => handleDownloadInvoice(invoice.id)}
                             >
                               <Download className="h-4 w-4" />
