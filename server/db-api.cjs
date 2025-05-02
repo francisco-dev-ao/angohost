@@ -18,7 +18,11 @@ const fs = require('fs');
 
 // Load environment variables
 dotenv.config();
-console.log('Senha lida do .env:', process.env.DB_PASSWORD);
+console.log('Carregando configurações de banco de dados...');
+console.log('Host:', process.env.DB_HOST);
+console.log('Porta:', process.env.DB_PORT);
+console.log('Usuário:', process.env.DB_USER);
+console.log('Banco de dados:', process.env.DB_NAME);
 
 const app = express();
 
@@ -26,6 +30,7 @@ const app = express();
 const allowedOrigins = [
   'https://deve.angohost.ao',
   'https://www.angohost.ao',
+  'https://consulta.angohost.ao',
   'http://localhost:8080',
   'http://localhost:3000'
 ];
@@ -74,11 +79,11 @@ const sslConfig = process.env.DB_SSL === 'true'
 
 // Get database configuration from environment variables with improved validation
 const pool = new Pool({
-  host: process.env.DB_HOST || 'emhtcellotyoasg.clouds2africa.com',
-  port: parseInt(process.env.DB_PORT || '1874'),
-  user: process.env.DB_USER || 'postgres',
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME || 'appdb',
+  host: process.env.DB_HOST || 'consulta.angohost.ao',
+  port: parseInt(process.env.DB_PORT || '5432'),
+  user: process.env.DB_USER || 'angohost_bd2',
+  password: process.env.DB_PASSWORD || 'Bayathu60@@',
+  database: process.env.DB_NAME || 'angohost_bd2',
   ssl: sslConfig,
   max: parseInt(process.env.DB_POOL_MAX || '20'),
   idleTimeoutMillis: parseInt(process.env.DB_IDLE_TIMEOUT || '30000'),
@@ -88,11 +93,11 @@ const pool = new Pool({
 // Verificação inicial de conexão
 pool.connect()
   .then(client => {
-    console.log('Conexão inicial com o banco de dados bem-sucedida');
+    console.log('✅ Conexão inicial com o banco de dados bem-sucedida');
     client.release();
   })
   .catch(err => {
-    console.error('Erro ao conectar ao banco de dados:', err);
+    console.error('❌ Erro ao conectar ao banco de dados:', err);
   });
 
 // Test connection endpoint

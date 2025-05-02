@@ -31,6 +31,10 @@ const getApiBaseUrl = (): string => {
     if (hostname === 'www.angohost.ao') {
       return 'https://www.angohost.ao/api';
     }
+
+    if (hostname === 'consulta.angohost.ao') {
+      return 'https://consulta.angohost.ao/api';
+    }
   }
   
   // In development, use the proxy from Vite

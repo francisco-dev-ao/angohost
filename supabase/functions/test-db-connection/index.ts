@@ -14,13 +14,10 @@ serve(async (req) => {
   }
 
   try {
-    // Conexão segura usando o segredo armazenado no Supabase
-    const databaseUrl = Deno.env.get('DATABASE_URL');
+    // Conexão direta usando configurações do ambiente AngoHost
+    const databaseUrl = Deno.env.get('DATABASE_URL') || 
+      "postgres://angohost_bd2:Bayathu60@@consulta.angohost.ao:5432/angohost_bd2";
     
-    if (!databaseUrl) {
-      throw new Error("String de conexão de banco de dados não encontrada");
-    }
-
     const pool = new Pool(databaseUrl, 3, true);
     
     // Teste de conexão
