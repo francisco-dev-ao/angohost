@@ -5,7 +5,7 @@ import PricingCard from "@/components/PricingCard";
 import FeatureCard from "@/components/FeatureCard";
 import { Server, Database, Globe } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { formatPrice } from "@/utils/formatters";
+import { formatPrice, parsePrice } from "@/utils/formatters";
 
 const WordPressHosting = () => {
   const [billingYears, setBillingYears] = useState("1");

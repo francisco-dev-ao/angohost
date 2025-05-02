@@ -19,7 +19,9 @@ interface SaveOrderProps {
 
 // Map to valid service types for client services table
 const mapToValidServiceType = (type: string) => {
-  const validTypes = ["email", "cpanel_hosting", "wordpress_hosting", "vps", "dedicated_server", "exchange"];
+  const validTypes: Array<"email" | "cpanel_hosting" | "wordpress_hosting" | "vps" | "dedicated_server" | "exchange"> = 
+    ["email", "cpanel_hosting", "wordpress_hosting", "vps", "dedicated_server", "exchange"];
+  
   const match = validTypes.find(validType => type.includes(validType));
   return match || "cpanel_hosting";
 };
@@ -56,7 +58,7 @@ export const useSaveOrder = () => {
           payment_status: 'pending',
           payment_method: options.paymentMethodId,
           client_details: options.clientDetails,
-          items: items, // Store the entire items array
+          items: JSON.stringify(items), // Convert items array to JSON string
         })
         .select()
         .single();
@@ -86,9 +88,7 @@ export const useSaveOrder = () => {
     const expiryDate = new Date();
     expiryDate.setFullYear(expiryDate.getFullYear() + (item.years || 1));
     
-    const serviceType = item.type === 'hosting' 
-      ? mapToValidServiceType(item.title.toLowerCase())
-      : 'email';
+    const serviceType = mapToValidServiceType(item.title.toLowerCase());
       
     const { error } = await supabase
       .from('client_services')
@@ -120,7 +120,7 @@ export const useSaveOrder = () => {
         domain_name: item.domain,
         registration_date: new Date().toISOString(),
         expiry_date: expiryDate.toISOString(),
-        status: 'pending',
+        status: 'pending_registration', // Using a valid status value
         auto_renew: true,
         whois_privacy: false,
         nameservers: [
