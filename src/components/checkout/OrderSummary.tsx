@@ -2,13 +2,11 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { useCart } from "@/contexts/CartContext";
 import { formatPrice } from "@/utils/formatters";
 import { Lock, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { Separator } from "@/components/ui/separator";
 import { CartItem } from "@/types/cart";
-import { SubmitHandler } from "react-hook-form";
 
 interface OrderSummaryProps {
   currentStep: number;
@@ -29,7 +27,7 @@ const OrderSummary = ({ onSubmit, currentStep, canProceed }: OrderSummaryProps) 
         {items.map((item, index) => (
           <div key={index} className="flex justify-between text-sm">
             <div>
-              <p className="font-medium">{item.name}</p>
+              <p className="font-medium">{item.title || item.name}</p>
               <p className="text-muted-foreground">{item.description || 'Serviço padrão'}</p>
             </div>
             <div className="text-right">

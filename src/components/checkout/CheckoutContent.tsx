@@ -13,6 +13,7 @@ import CustomerInfoStep from "./steps/CustomerInfoStep";
 import PaymentStep from "./steps/PaymentStep";
 import OrderConfirmation from "./steps/OrderConfirmation";
 import { supabase } from "@/integrations/supabase/client";
+import { CartItem } from "@/types/cart";
 
 const CheckoutContent = () => {
   const [currentStep, setCurrentStep] = useState(1);

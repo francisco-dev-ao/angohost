@@ -81,17 +81,19 @@ export const useSaveOrder = () => {
 
   // Helper function to determine item type
   const determineItemType = (item: CartItem): 'domain' | 'service' | 'other' => {
-    const name = (item.name || '').toLowerCase();
+    // Use name or title, whichever is available
+    const itemName = (item.name || item.title || '').toLowerCase();
     
-    if (name.includes('domínio') || name.includes('dominio') || 
-        name.includes('domain') || item.type === 'domain') {
+    if (itemName.includes('domínio') || itemName.includes('dominio') || 
+        itemName.includes('domain') || item.type === 'domain' ||
+        (item.domain && item.domain.length > 0)) {
       return 'domain';
     }
     
-    if (name.includes('hostin') || name.includes('vps') || 
-        name.includes('servidor') || name.includes('server') || 
-        name.includes('wordpress') || name.includes('email') || 
-        name.includes('cpanel') || item.type === 'service' || 
+    if (itemName.includes('hostin') || itemName.includes('vps') || 
+        itemName.includes('servidor') || itemName.includes('server') || 
+        itemName.includes('wordpress') || itemName.includes('email') || 
+        itemName.includes('cpanel') || item.type === 'service' || 
         item.service_type) {
       return 'service';
     }
@@ -101,52 +103,75 @@ export const useSaveOrder = () => {
 
   // Process domain items
   const processDomain = async (item: CartItem, userId: string) => {
-    const domain = item.domain || item.name.split(' ')[0]; // Extract domain name
-    const registrationDate = new Date();
-    const expiryDate = new Date();
-    expiryDate.setFullYear(expiryDate.getFullYear() + 1); // Default 1 year registration
-    
-    await supabase.from('client_domains').insert({
-      domain_name: domain,
-      user_id: userId,
-      status: 'pending',
-      registration_date: registrationDate.toISOString(),
-      expiry_date: expiryDate.toISOString(),
-      auto_renew: true,
-      whois_privacy: false,
-      is_locked: true
-    });
+    try {
+      const domainName = item.domain || (item.name ? item.name.split(' ')[0] : item.title?.split(' ')[0]); 
+      if (!domainName) {
+        console.error('No domain name found for item:', item);
+        return;
+      }
+
+      const registrationDate = new Date();
+      const expiryDate = new Date();
+      expiryDate.setFullYear(expiryDate.getFullYear() + 1); // Default 1 year registration
+      
+      await supabase.from('client_domains').insert({
+        domain_name: domainName,
+        user_id: userId,
+        status: 'pending_registration', // Using valid enum value
+        registration_date: registrationDate.toISOString(),
+        expiry_date: expiryDate.toISOString(),
+        auto_renew: true,
+        whois_privacy: false,
+        is_locked: true
+      });
+    } catch (error) {
+      console.error('Error processing domain:', error);
+    }
   };
 
   // Process service items
   const processService = async (item: CartItem, userId: string) => {
-    const renewalDate = new Date();
-    renewalDate.setFullYear(renewalDate.getFullYear() + 1); // Default 1 year subscription
-    
-    // Determine service type
-    let serviceType = 'hosting';
-    const name = (item.name || '').toLowerCase();
+    try {
+      const renewalDate = new Date();
+      renewalDate.setFullYear(renewalDate.getFullYear() + 1); // Default 1 year subscription
+      
+      // Map service type to known service types
+      let serviceType = mapToValidServiceType(item);
+      const serviceName = item.name || item.title || 'Serviço';
+      const serviceDescription = item.description || '';
+      
+      await supabase.from('client_services').insert({
+        name: serviceName,
+        service_type: serviceType,
+        description: serviceDescription,
+        status: 'pending',
+        renewal_date: renewalDate.toISOString(),
+        price_monthly: item.price / 12, // Estimate monthly price
+        price_yearly: item.price,
+        user_id: userId
+      });
+    } catch (error) {
+      console.error('Error processing service:', error);
+    }
+  };
+
+  // Map service type to valid enum values
+  const mapToValidServiceType = (item: CartItem) => {
+    const name = (item.name || item.title || '').toLowerCase();
     
     if (name.includes('email')) {
-      serviceType = 'email';
+      return 'email';
     } else if (name.includes('vps')) {
-      serviceType = 'vps';
+      return 'vps';
     } else if (name.includes('dedica')) {
-      serviceType = 'dedicated';
+      return 'dedicated_server';
     } else if (name.includes('wordpress')) {
-      serviceType = 'wordpress';
+      return 'wordpress_hosting';
+    } else if (name.includes('cpanel')) {
+      return 'cpanel_hosting';
+    } else {
+      return 'cpanel_hosting'; // Default
     }
-    
-    await supabase.from('client_services').insert({
-      name: item.name,
-      service_type: serviceType,
-      status: 'pending',
-      renewal_date: renewalDate.toISOString(),
-      price_monthly: item.price / 12, // Estimate monthly price
-      price_yearly: item.price,
-      description: item.description || '',
-      user_id: userId
-    });
   };
 
   return { saveCartAsOrder, isSaving };

@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { CartItem } from '@/contexts/CartContext';
+import { CartItem } from '@/types/cart';
 import { supabase } from '@/integrations/supabase/client';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 
