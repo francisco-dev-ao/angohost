@@ -28,7 +28,7 @@ interface CartContextType {
   isLoading?: boolean;
   error?: Error | null;
   isAuthenticated: boolean;
-  total: number; // Added this property
+  total: number;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -51,7 +51,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
         isLoading,
         error,
         isAuthenticated: !!user,
-        total // Added total to the provider value
+        total
       }}
     >
       {children}

@@ -15,9 +15,9 @@ import PaymentOptionsSection from './form/PaymentOptionsSection';
 import EmptyCartNotice from './form/EmptyCartNotice';
 
 interface CheckoutFormProps {
-  onSubmit?: (formData: any) => void; // Added onSubmit as an optional prop
+  onSubmit?: (formData: any) => void;
   onComplete?: (orderId: string) => void;
-  loading?: boolean; // Added loading as an optional prop
+  loading?: boolean;
 }
 
 const CheckoutForm = ({ onSubmit, onComplete, loading: externalLoading }: CheckoutFormProps) => {
