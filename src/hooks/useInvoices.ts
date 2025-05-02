@@ -40,9 +40,10 @@ export const useInvoices = () => {
       if (error) throw error;
       
       // Ensure proper type casting to maintain status type
-      const typedInvoices = (data || []).map(invoice => ({
+      const typedInvoices: Invoice[] = (data || []).map(invoice => ({
         ...invoice,
-        status: invoice.status as 'pending' | 'paid' | 'cancelled' | 'overdue'
+        status: invoice.status as 'pending' | 'paid' | 'cancelled' | 'overdue',
+        items: Array.isArray(invoice.items) ? invoice.items : []
       }));
       
       setInvoices(typedInvoices);

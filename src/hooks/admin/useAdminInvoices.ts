@@ -19,9 +19,10 @@ export const useAdminInvoices = () => {
       if (error) throw error;
       
       // Ensure proper type casting to maintain status type
-      const typedInvoices = (data || []).map(invoice => ({
+      const typedInvoices: Invoice[] = (data || []).map(invoice => ({
         ...invoice,
-        status: invoice.status as 'pending' | 'paid' | 'cancelled' | 'overdue'
+        status: invoice.status as 'pending' | 'paid' | 'cancelled' | 'overdue',
+        items: Array.isArray(invoice.items) ? invoice.items : []
       }));
       
       setInvoices(typedInvoices);
@@ -29,6 +30,61 @@ export const useAdminInvoices = () => {
       toast.error('Erro ao carregar faturas: ' + error.message);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Helper methods for the dashboard
+  const fetchRecentInvoices = async (limit = 5) => {
+    try {
+      const { data, error } = await supabase
+        .from('invoices')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+      if (error) throw error;
+      
+      return (data || []).map(invoice => ({
+        ...invoice,
+        status: invoice.status as 'pending' | 'paid' | 'cancelled' | 'overdue',
+        items: Array.isArray(invoice.items) ? invoice.items : []
+      }));
+    } catch (error) {
+      console.error('Error fetching recent invoices:', error);
+      return [];
+    }
+  };
+
+  const fetchInvoiceCounts = async () => {
+    try {
+      const [pendingResult, paidResult] = await Promise.all([
+        supabase.from('invoices').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
+        supabase.from('invoices').select('id', { count: 'exact', head: true }).eq('status', 'paid')
+      ]);
+      
+      return {
+        pendingInvoices: pendingResult.count || 0,
+        paidInvoices: paidResult.count || 0
+      };
+    } catch (error) {
+      console.error('Error fetching invoice counts:', error);
+      return { pendingInvoices: 0, paidInvoices: 0 };
+    }
+  };
+
+  const fetchTotalRevenue = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('invoices')
+        .select('amount')
+        .eq('status', 'paid');
+        
+      if (error) throw error;
+      
+      return (data || []).reduce((sum, invoice) => sum + (invoice.amount || 0), 0);
+    } catch (error) {
+      console.error('Error fetching total revenue:', error);
+      return 0;
     }
   };
 
@@ -94,6 +150,9 @@ export const useAdminInvoices = () => {
     isLoading,
     fetchInvoices,
     downloadInvoice,
-    deleteInvoice
+    deleteInvoice,
+    fetchRecentInvoices,
+    fetchInvoiceCounts,
+    fetchTotalRevenue
   };
 };

@@ -1,7 +1,7 @@
 
 import React, { useState } from "react";
 import AdminLayout from "@/components/admin/AdminLayout";
-import { useInvoices } from "@/hooks/useInvoices";
+import { useAdminInvoices } from "@/hooks/admin/useAdminInvoices";
 import {
   Card,
   CardContent,
@@ -16,7 +16,7 @@ import InvoiceSearch from "@/components/admin/invoices/InvoiceSearch";
 import InvoicesTable from "@/components/admin/invoices/InvoicesTable";
 
 const AdminInvoices = () => {
-  const { invoices, isLoading, deleteInvoice } = useInvoices();
+  const { invoices, isLoading, deleteInvoice } = useAdminInvoices();
   const [searchTerm, setSearchTerm] = useState("");
 
   const filteredInvoices = invoices.filter(

@@ -23,7 +23,23 @@ export const useClientDomains = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setDomains(data as Domain[] || []);
+      
+      const formattedDomains: Domain[] = (data || []).map(domain => ({
+        id: domain.id,
+        domain_name: domain.domain_name,
+        user_id: domain.user_id,
+        status: domain.status,
+        registration_date: domain.registration_date,
+        expiry_date: domain.expiry_date,
+        auto_renew: domain.auto_renew,
+        whois_privacy: domain.whois_privacy,
+        is_locked: domain.is_locked,
+        nameservers: domain.nameservers,
+        created_at: domain.created_at,
+        updated_at: domain.updated_at
+      }));
+      
+      setDomains(formattedDomains);
     } catch (error: any) {
       console.error('Error fetching domains:', error);
       toast.error('Erro ao carregar domínios');

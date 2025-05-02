@@ -23,7 +23,30 @@ export const useOrders = () => {
         
       if (error) throw error;
       
-      setOrders(data || []);
+      // Ensure the data matches our Order type
+      const formattedOrders: Order[] = (data || []).map(order => ({
+        id: order.id,
+        order_number: order.order_number,
+        user_id: order.user_id,
+        total_amount: order.total_amount,
+        status: order.status === 'canceled' ? 'cancelled' : order.status,
+        created_at: order.created_at,
+        payment_method: order.payment_method,
+        payment_status: order.payment_status,
+        client_details: order.client_details || {
+          name: '',
+          email: '',
+          phone: '',
+          address: ''
+        },
+        items: Array.isArray(order.items) ? order.items : [],
+        invoice: order.invoices?.[0] ? {
+          id: order.invoices[0].id,
+          invoice_number: order.invoices[0].invoice_number
+        } : undefined
+      }));
+      
+      setOrders(formattedOrders);
     } catch (error: any) {
       toast.error('Erro ao carregar pedidos: ' + error.message);
     } finally {
