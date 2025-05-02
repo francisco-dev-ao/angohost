@@ -2,171 +2,173 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
-import { toast } from 'sonner';
 import { Domain, Service } from '@/types/client';
-
-interface DashboardStats {
-  domains: number;
-  activeServices: number;
-  pendingInvoices: number;
-  openTickets: number;
-  notifications: number;
-  services: Service[];
-  domains_list: Domain[];
-  invoices: any[];
-  loading: boolean;
-}
 
 export const useRealtimeClientDashboard = () => {
   const { user } = useSupabaseAuth();
-  const [stats, setStats] = useState<DashboardStats>({
-    domains: 0,
-    activeServices: 0,
-    pendingInvoices: 0,
-    openTickets: 0,
-    notifications: 0,
-    services: [],
-    domains_list: [],
-    invoices: [],
-    loading: true,
-  });
+  const [services, setServices] = useState<Service[]>([]);
+  const [domains, setDomains] = useState<Domain[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchDashboardData = async () => {
+    if (!user) return;
+    
+    try {
+      setLoading(true);
+      await Promise.all([
+        fetchServices(),
+        fetchDomains()
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchServices = async () => {
+    if (!user) return;
+    
+    const { data, error } = await supabase
+      .from('client_services')
+      .select('*')
+      .eq('user_id', user.id)
+      .limit(10)
+      .order('created_at', { ascending: false });
+      
+    if (!error && data) {
+      // Map service_type to match the expected Service type
+      const mappedServices: Service[] = data.map(service => ({
+        id: service.id,
+        name: service.name,
+        // Map service_type to one of the allowed values
+        service_type: mapServiceType(service.service_type),
+        status: mapServiceStatus(service.status),
+        created_at: service.created_at,
+        updated_at: service.updated_at,
+        renewal_date: service.renewal_date,
+        price_monthly: service.price_monthly,
+        price_yearly: service.price_yearly,
+        description: service.description,
+        control_panel_url: service.control_panel_url,
+        user_id: service.user_id
+      }));
+      
+      setServices(mappedServices);
+    }
+  };
+
+  const fetchDomains = async () => {
+    if (!user) return;
+    
+    const { data, error } = await supabase
+      .from('client_domains')
+      .select('*')
+      .eq('user_id', user.id)
+      .limit(10)
+      .order('expiry_date', { ascending: true });
+      
+    if (!error && data) {
+      // Map status to match the expected Domain type
+      const mappedDomains: Domain[] = data.map(domain => ({
+        id: domain.id,
+        domain_name: domain.domain_name,
+        user_id: domain.user_id,
+        status: mapDomainStatus(domain.status),
+        registration_date: domain.registration_date,
+        expiry_date: domain.expiry_date,
+        auto_renew: domain.auto_renew,
+        whois_privacy: domain.whois_privacy,
+        is_locked: domain.is_locked,
+        nameservers: domain.nameservers,
+        created_at: domain.created_at,
+        updated_at: domain.updated_at
+      }));
+      
+      setDomains(mappedDomains);
+    }
+  };
+
+  // Helper function to map service_type to the expected Service.service_type values
+  const mapServiceType = (type: string): 'hosting' | 'email' | 'ssl' | 'vpn' | 'other' => {
+    if (type === 'cpanel_hosting' || type === 'wordpress_hosting' || type === 'vps' || type === 'dedicated_server') {
+      return 'hosting';
+    } else if (type === 'email' || type === 'exchange') {
+      return 'email';
+    } else if (type === 'ssl') {
+      return 'ssl';
+    } else if (type === 'vpn') {
+      return 'vpn';
+    } else {
+      return 'other';
+    }
+  };
+
+  // Helper function to map status to the expected Domain.status values
+  const mapDomainStatus = (status: string): 'pending' | 'active' | 'expired' | 'suspended' => {
+    switch(status) {
+      case 'active':
+        return 'active';
+      case 'expired':
+        return 'expired';
+      case 'suspended':
+        return 'suspended';
+      case 'pending_transfer':
+      case 'pending_registration':
+        return 'pending';
+      default:
+        return 'pending';
+    }
+  };
+
+  // Helper function to map status to the expected Service.status values
+  const mapServiceStatus = (status: string): 'active' | 'pending' | 'suspended' | 'expired' => {
+    switch(status) {
+      case 'active':
+        return 'active';
+      case 'expired':
+        return 'expired';
+      case 'suspended':
+        return 'suspended';
+      default:
+        return 'pending';
+    }
+  };
 
   useEffect(() => {
-    if (!user) return;
-
-    const fetchDashboardData = async () => {
-      try {
-        setStats(prev => ({ ...prev, loading: true }));
-        
-        // Fetch domains
-        const { data: domains, error: domainsError } = await supabase
-          .from('client_domains')
-          .select('*')
-          .eq('user_id', user.id)
-          .limit(3)
-          .order('created_at', { ascending: false });
-          
-        if (domainsError) throw domainsError;
-        
-        // Fetch services
-        const { data: services, error: servicesError } = await supabase
-          .from('client_services')
-          .select('*')
-          .eq('user_id', user.id)
-          .eq('status', 'active')
-          .limit(2)
-          .order('created_at', { ascending: false });
-          
-        if (servicesError) throw servicesError;
-        
-        // Fetch invoices
-        const { data: invoices, error: invoicesError } = await supabase
-          .from('invoices')
-          .select('*')
-          .eq('user_id', user.id)
-          .eq('status', 'pending')
-          .limit(1)
-          .order('created_at', { ascending: false });
-          
-        if (invoicesError) throw invoicesError;
-        
-        // Count open tickets - Using { count: 'exact' }
-        const { count: ticketsCount, error: ticketsError } = await supabase
-          .from('client_tickets')
-          .select('*', { count: 'exact', head: true })
-          .eq('user_id', user.id)
-          .eq('status', 'open');
-          
-        if (ticketsError) throw ticketsError;
-        
-        // Count unread notifications - Using { count: 'exact' }
-        const { count: notificationsCount, error: notificationsError } = await supabase
-          .from('user_notifications')
-          .select('*', { count: 'exact', head: true })
-          .eq('user_id', user.id)
-          .eq('read', false);
-          
-        if (notificationsError) throw notificationsError;
-        
-        // Update stats state with all the fetched data
-        setStats({
-          domains: domains?.length || 0,
-          activeServices: services?.length || 0,
-          pendingInvoices: invoices?.length || 0,
-          openTickets: ticketsCount || 0,
-          notifications: notificationsCount || 0,
-          services: services || [],
-          domains_list: domains || [],
-          invoices: invoices || [],
-          loading: false,
-        });
-      } catch (error) {
-        console.error('Error fetching dashboard data:', error);
-        toast.error('Erro ao carregar dados do dashboard');
-        setStats(prev => ({ ...prev, loading: false }));
-      }
-    };
-
-    fetchDashboardData();
-
-    // Set up real-time subscriptions
-    const domainsChannel = supabase
-      .channel('client_domains_dashboard')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'client_domains',
-          filter: `user_id=eq.${user.id}`
-        },
-        (payload) => {
-          console.log('Real-time domain update in dashboard:', payload);
-          fetchDashboardData();
-        }
-      )
-      .subscribe();
-
-    const servicesChannel = supabase
-      .channel('client_services_dashboard')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
+    if (user) {
+      fetchDashboardData();
+      
+      const channel = supabase
+        .channel('client-dashboard')
+        .on('postgres_changes', { 
+          event: '*', 
+          schema: 'public', 
           table: 'client_services',
           filter: `user_id=eq.${user.id}`
-        },
-        (payload) => {
-          console.log('Real-time service update in dashboard:', payload);
-          fetchDashboardData();
-        }
-      )
-      .subscribe();
-
-    const invoicesChannel = supabase
-      .channel('client_invoices_dashboard')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'invoices',
+        }, () => {
+          fetchServices();
+        })
+        .on('postgres_changes', { 
+          event: '*', 
+          schema: 'public', 
+          table: 'client_domains',
           filter: `user_id=eq.${user.id}`
-        },
-        (payload) => {
-          console.log('Real-time invoice update in dashboard:', payload);
-          fetchDashboardData();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(domainsChannel);
-      supabase.removeChannel(servicesChannel);
-      supabase.removeChannel(invoicesChannel);
-    };
+        }, () => {
+          fetchDomains();
+        })
+        .subscribe();
+        
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
   }, [user]);
 
-  return stats;
+  return {
+    services,
+    domains,
+    loading,
+    fetchDashboardData,
+    fetchServices,
+    fetchDomains
+  };
 };

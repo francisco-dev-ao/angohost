@@ -29,10 +29,12 @@ export const useOrders = () => {
         order_number: order.order_number,
         user_id: order.user_id,
         total_amount: order.total_amount,
-        status: order.status === 'canceled' ? 'cancelled' : order.status,
+        // Convert 'canceled' to 'cancelled' to match the expected type
+        status: order.status === 'canceled' ? 'cancelled' : order.status as any,
         created_at: order.created_at,
         payment_method: order.payment_method,
-        payment_status: order.payment_status,
+        // Map payment_status to one of the allowed values
+        payment_status: mapPaymentStatus(order.payment_status),
         client_details: order.client_details || {
           name: '',
           email: '',
@@ -52,6 +54,13 @@ export const useOrders = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Helper function to ensure payment_status matches the expected type
+  const mapPaymentStatus = (status: string): 'pending' | 'paid' | 'cancelled' => {
+    if (status === 'paid') return 'paid';
+    if (status === 'cancelled' || status === 'canceled') return 'cancelled';
+    return 'pending';
   };
 
   useEffect(() => {

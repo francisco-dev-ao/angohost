@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
@@ -24,11 +23,13 @@ export const useClientDomains = () => {
 
       if (error) throw error;
       
+      // Map the database status values to the expected Domain status values
       const formattedDomains: Domain[] = (data || []).map(domain => ({
         id: domain.id,
         domain_name: domain.domain_name,
         user_id: domain.user_id,
-        status: domain.status,
+        // Map any unexpected status values to one of the allowed statuses
+        status: mapDomainStatus(domain.status),
         registration_date: domain.registration_date,
         expiry_date: domain.expiry_date,
         auto_renew: domain.auto_renew,
@@ -45,6 +46,23 @@ export const useClientDomains = () => {
       toast.error('Erro ao carregar domínios');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Helper function to map any status to the allowed Domain status values
+  const mapDomainStatus = (status: string): 'pending' | 'active' | 'expired' | 'suspended' => {
+    switch(status) {
+      case 'active':
+        return 'active';
+      case 'expired':
+        return 'expired';
+      case 'suspended':
+        return 'suspended';
+      case 'pending_transfer':
+      case 'pending_registration':
+        return 'pending';
+      default:
+        return 'pending';
     }
   };
 
