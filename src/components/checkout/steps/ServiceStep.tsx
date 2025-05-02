@@ -3,7 +3,7 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { CardTitle, CardDescription } from "@/components/ui/card";
 import { ArrowRight, PlusCircle, Trash, Package, Clock, Check } from "lucide-react";
-import { formatPrice } from '@/utils/formatters';
+import { formatPrice, parsePrice } from '@/utils/formatters';
 import { CartItem } from '@/contexts/CartContext';
 import { toast } from "sonner";
 import { motion } from "framer-motion";
@@ -216,7 +216,7 @@ const ServiceStep = ({
                     <span>Antispam e antivírus</span>
                   </li>
                 </ul>
-                <div className="text-primary font-semibold mb-3">A partir de {formatPrice(20000)}/usuário</div>
+                <div className="text-primary font-semibold mb-3">{formatPrice(20000)}/usuário</div>
                 <Button variant="outline" className="w-full group">
                   Adicionar
                   <PlusCircle className="ml-2 h-4 w-4 group-hover:scale-110 transition-transform" />
@@ -242,7 +242,7 @@ const ServiceStep = ({
                     <span>SSL Grátis</span>
                   </li>
                 </ul>
-                <div className="text-primary font-semibold mb-3">A partir de {formatPrice(25000)}/ano</div>
+                <div className="text-primary font-semibold mb-3">{formatPrice(25000)}/ano</div>
                 <Button variant="outline" className="w-full group">
                   Adicionar
                   <PlusCircle className="ml-2 h-4 w-4 group-hover:scale-110 transition-transform" />

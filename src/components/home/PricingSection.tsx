@@ -3,11 +3,12 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import PricingCard from "@/components/PricingCard";
+import { formatPrice } from "@/utils/formatters";
 
 interface PricingPlan {
   title: string;
   description: string;
-  price: number;
+  price: number | string;
   period: string;
   features: {
     text: string;
@@ -21,7 +22,7 @@ const PricingSection = () => {
     {
       title: "Iniciante",
       description: "Ideal para sites pessoais e blogs",
-      price: 14.90,
+      price: formatPrice(9900),
       period: "mês",
       features: [
         { text: "1 Site", included: true },
@@ -37,7 +38,7 @@ const PricingSection = () => {
     {
       title: "Business",
       description: "Perfeito para pequenos negócios",
-      price: 29.90,
+      price: formatPrice(15900),
       period: "mês",
       popular: true,
       features: [
@@ -54,7 +55,7 @@ const PricingSection = () => {
     {
       title: "Profissional",
       description: "Para médias e grandes empresas",
-      price: 59.90,
+      price: formatPrice(28900),
       period: "mês",
       features: [
         { text: "Sites Ilimitados", included: true },

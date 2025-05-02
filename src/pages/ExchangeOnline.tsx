@@ -4,13 +4,14 @@ import Layout from "@/components/Layout";
 import PricingCard from "@/components/PricingCard";
 import FeatureCard from "@/components/FeatureCard";
 import { Mail, Globe, Server } from "lucide-react";
+import { formatPrice } from "@/utils/formatters";
 
 const ExchangeOnline = () => {
   const plans = [
     {
       title: "Exchange Basic",
       description: "Exchange Online Plano 1",
-      price: 19.99,
+      price: formatPrice(19900),
       period: "usuário/mês",
       features: [
         { text: "50GB de caixa postal", included: true },
@@ -24,7 +25,7 @@ const ExchangeOnline = () => {
     {
       title: "Exchange Standard",
       description: "Exchange Online Plano 2",
-      price: 39.99,
+      price: formatPrice(39900),
       period: "usuário/mês",
       popular: true,
       features: [
@@ -39,7 +40,7 @@ const ExchangeOnline = () => {
     {
       title: "Microsoft 365",
       description: "Solução completa",
-      price: 59.99,
+      price: formatPrice(59900),
       period: "usuário/mês",
       features: [
         { text: "Exchange Online completo", included: true },

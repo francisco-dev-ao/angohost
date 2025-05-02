@@ -11,7 +11,6 @@ import { toast } from "sonner";
 import { useCart } from "@/contexts/CartContext";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Input } from "@/components/ui/input";
 import DomainValidator from "@/components/DomainValidator";
 
 const CpanelHosting = () => {
@@ -46,7 +45,6 @@ const CpanelHosting = () => {
       title: "Empresarial",
       description: "Perfeito para pequenos negócios",
       basePrice: 15900,
-      period: "mês",
       popular: true,
       features: [
         { text: "10 Sites", included: true },
@@ -63,7 +61,6 @@ const CpanelHosting = () => {
       title: "Profissional",
       description: "Para médias e grandes empresas",
       basePrice: 28900,
-      period: "mês",
       features: [
         { text: "Sites Ilimitados", included: true },
         { text: "100GB SSD", included: true },

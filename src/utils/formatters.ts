@@ -5,12 +5,23 @@
 export const formatPrice = (price: number | string): string => {
   const value = typeof price === 'string' ? parseFloat(price) : price;
   
-  // Format with dot as thousand separator and no decimal places, with Kz suffix
+  // Format with dot as thousand separator and no decimal places, with kz suffix
   return new Intl.NumberFormat('pt-AO', {
     style: 'decimal',
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
-  }).format(value) + 'Kz';
+    useGrouping: true,
+  }).format(value) + 'kz';
+};
+
+/**
+ * Parse a formatted price string back to a number
+ */
+export const parsePrice = (formattedPrice: string): number => {
+  // Remove 'kz' suffix and any non-numeric characters except for commas and dots
+  const cleanedPrice = formattedPrice.replace(/kz/gi, '').trim();
+  // Replace dots (thousand separators) and convert to number
+  return parseFloat(cleanedPrice.replace(/\./g, ''));
 };
 
 /**

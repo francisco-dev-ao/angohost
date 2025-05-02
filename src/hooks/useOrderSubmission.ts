@@ -5,6 +5,7 @@ import { useSaveOrder } from '@/hooks/useSaveOrder';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { useCart } from '@/contexts/CartContext';
 import { toast } from 'sonner';
+import { parsePrice } from '@/utils/formatters';
 
 export const useOrderSubmission = (formData: any, paymentMethod: string | null) => {
   const [isSavingCart, setIsSavingCart] = useState(false);

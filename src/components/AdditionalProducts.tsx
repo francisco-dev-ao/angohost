@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Plus } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { toast } from 'sonner';
+import { formatPrice } from '@/utils/formatters';
 
 interface AdditionalProduct {
   id: string;
@@ -54,7 +55,7 @@ const AdditionalProducts = () => {
             </CardHeader>
             <CardContent>
               <div className="flex items-center justify-between">
-                <span className="text-xl font-bold">{product.price.toFixed(2)} kz</span>
+                <span className="text-xl font-bold">{formatPrice(product.price)}</span>
                 <Button variant="outline" onClick={() => handleAddProduct(product)}>
                   <Plus className="mr-2 h-4 w-4" />
                   Adicionar

@@ -14,7 +14,7 @@ const WordPressHosting = () => {
     {
       title: "WordPress Basic",
       description: "Ideal para blogs e sites pessoais",
-      price: 19.99,
+      price: formatPrice(19900),
       period: "mês",
       features: [
         { text: "1 Site WordPress", included: true },
@@ -28,7 +28,7 @@ const WordPressHosting = () => {
     {
       title: "WordPress Pro",
       description: "Perfeito para empresas",
-      price: 39.99,
+      price: formatPrice(39900),
       period: "mês",
       popular: true,
       features: [
@@ -43,7 +43,7 @@ const WordPressHosting = () => {
     {
       title: "WordPress Business",
       description: "Para grandes projetos",
-      price: 79.99,
+      price: formatPrice(79900),
       period: "mês",
       features: [
         { text: "10 Sites WordPress", included: true },
@@ -58,7 +58,7 @@ const WordPressHosting = () => {
 
   const yearlyPlans = plans.map(plan => ({
     ...plan,
-    price: formatPrice(Number(plan.price.toString().replace(/[^\d]/g, '')) * parseInt(billingYears)),
+    price: formatPrice(Number(parsePrice(plan.price.toString())) * parseInt(billingYears)),
     period: `${billingYears} ${parseInt(billingYears) === 1 ? 'ano' : 'anos'}`
   }));
 
