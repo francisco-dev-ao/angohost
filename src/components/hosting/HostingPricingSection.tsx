@@ -1,4 +1,3 @@
-
 import React from "react";
 import PricingCard from "@/components/PricingCard";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -17,9 +16,7 @@ const HostingPricingSection = ({
   hostingPlans,
   onPlanSelect
 }: HostingPricingSectionProps) => {
-  // Calculate price with multi-year discounts
   const calculateYearlyPrice = (basePrice: number, years: number) => {
-    // Apply discount for multi-year plans (5% per additional year)
     let discount = 0;
     if (years > 1) {
       discount = (years - 1) * 0.05;
