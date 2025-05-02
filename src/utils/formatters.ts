@@ -1,16 +1,15 @@
-
 /**
  * Format a number as a price in Kwanza (KZ)
  */
 export const formatPrice = (price: number | string): string => {
   const value = typeof price === 'string' ? parseFloat(price) : price;
   
-  // Format with dot as thousand separator and no decimal places, with Kz suffix
+  // Format with dot as thousand separator and no decimal places, with kz suffix
   return new Intl.NumberFormat('pt-AO', {
     style: 'decimal',
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
-  }).format(value) + 'Kz';
+  }).format(value) + 'kz';
 };
 
 /**
