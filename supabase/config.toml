@@ -21,5 +21,11 @@ port = 54325
 [functions]
 port = 54326
 
+[functions.db-test-connection]
+verify_jwt = false
+
+[functions.db-execute-query]
+verify_jwt = false
+
 [functions.delete-user]
 verify_jwt = true

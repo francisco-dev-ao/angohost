@@ -3,10 +3,13 @@
  * Uses fetch API to call server endpoints instead of direct pg connection
  */
 
+import { supabase } from "@/integrations/supabase/client";
+
 interface QueryResult {
   success: boolean;
   data?: any[];
   rowCount?: number;
+  count?: number;
   error?: string;
   message?: string;
 }
@@ -44,64 +47,133 @@ const getApiBaseUrl = (): string => {
 };
 
 /**
- * Test the database connection through a server endpoint
+ * Test the database connection using Supabase Edge Functions
  */
 export const testDatabaseConnection = async (): Promise<QueryResult> => {
   try {
-    const apiUrl = getApiBaseUrl();
-    console.log('Testando conexão com o banco de dados usando URL:', apiUrl);
+    console.log('Testando conexão com o banco de dados via Supabase');
     
     // Use a timeout to prevent hanging requests
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
     
-    const response = await fetch(`${apiUrl}/db/test-connection`, {
+    // First try with the Supabase Edge Function
+    const { data, error } = await supabase.functions.invoke('db-test-connection', {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
-      credentials: 'include',
-      signal: controller.signal
     });
     
     clearTimeout(timeoutId);
-    console.log('Status da resposta:', response.status);
     
-    // Handle non-2xx responses
-    if (!response.ok) {
-      const contentType = response.headers.get('content-type');
-      
-      // If HTML instead of JSON (common in production server errors)
-      if (contentType && contentType.includes('text/html')) {
-        console.error('Recebido HTML em vez de JSON');
-        throw new Error(`Erro do servidor (${response.status}): endpoint retornou HTML em vez de JSON`);
-      }
-      
-      // Try to get error details in JSON format
-      try {
-        const errorData = await response.json();
-        throw new Error(errorData.error || `Erro HTTP ${response.status}`);
-      } catch (jsonError) {
-        // If JSON parsing fails, use default message
-        throw new Error(`Erro HTTP! Status: ${response.status}`);
-      }
+    if (error) {
+      console.error('Erro ao testar conexão via Supabase:', error);
+      throw error;
     }
     
-    // Process successful response
-    const result = await response.json();
-    return result;
-  } catch (err: any) {
-    console.error('Erro ao testar conexão com o banco de dados:', err);
-    return { 
-      success: false, 
-      error: err.message || 'Erro na conexão com o servidor'
-    };
+    return data as QueryResult;
+  } catch (supabaseErr) {
+    console.error('Falha na conexão Supabase, tentando API de backup:', supabaseErr);
+    
+    try {
+      const apiUrl = getApiBaseUrl();
+      console.log('Testando conexão com o banco de dados usando URL de backup:', apiUrl);
+      
+      // Use a timeout to prevent hanging requests
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      
+      const response = await fetch(`${apiUrl}/db/test-connection`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        credentials: 'include',
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+      console.log('Status da resposta de backup:', response.status);
+      
+      if (!response.ok) {
+        throw new Error(`Erro HTTP! Status: ${response.status}`);
+      }
+      
+      const result = await response.json();
+      return result;
+    } catch (backupErr: any) {
+      console.error('Erro ao testar conexão com o banco de dados de backup:', backupErr);
+      return { 
+        success: false, 
+        error: backupErr.message || 'Erro na conexão com o servidor'
+      };
+    }
   }
 };
 
 /**
- * Execute a SQL query through a server endpoint
+ * Execute a database operation through Supabase Edge Function
+ */
+export const executeOperation = async (
+  table: string, 
+  action: 'select' | 'insert' | 'update' | 'delete',
+  filter?: Record<string, any>,
+  data?: Record<string, any>
+): Promise<QueryResult> => {
+  try {
+    console.log(`Executando operação ${action} na tabela ${table}`);
+    
+    // Use a timeout to prevent hanging requests
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+    
+    // Execute operation via Supabase Edge Function
+    const { data: responseData, error } = await supabase.functions.invoke('db-execute-query', {
+      method: 'POST',
+      body: { table, action, filter, data }
+    });
+    
+    clearTimeout(timeoutId);
+    
+    if (error) {
+      console.error('Erro ao executar operação via Supabase:', error);
+      throw error;
+    }
+    
+    return responseData as QueryResult;
+  } catch (supabaseErr) {
+    console.error('Falha na conexão Supabase, tentando API de backup:', supabaseErr);
+    
+    // Fallback to legacy API endpoint
+    try {
+      const apiUrl = getApiBaseUrl();
+      console.log('Executando operação usando API de backup:', apiUrl);
+      
+      // Transform the operation into a SQL query (simplified)
+      let query = '';
+      let params: any[] = [];
+      
+      switch (action) {
+        case 'select':
+          query = `SELECT * FROM ${table}`;
+          break;
+        default:
+          throw new Error(`Operação ${action} não suportada no fallback`);
+      }
+      
+      // Execute via legacy API
+      return await executeQuery(query, params);
+    } catch (backupErr: any) {
+      console.error('Erro ao executar operação de backup:', backupErr);
+      return { 
+        success: false, 
+        error: backupErr.message || 'Erro na execução da operação'
+      };
+    }
+  }
+};
+
+/**
+ * Legacy: Execute a SQL query through a server endpoint
  */
 export const executeQuery = async (query: string, params?: any[]): Promise<QueryResult> => {
   try {
@@ -130,23 +202,7 @@ export const executeQuery = async (query: string, params?: any[]): Promise<Query
     
     // Handle non-2xx responses
     if (!response.ok) {
-      const contentType = response.headers.get('content-type');
-      
-      // If HTML instead of JSON (common in production server errors)
-      if (contentType && contentType.includes('text/html')) {
-        const text = await response.text();
-        console.error('Recebido HTML em vez de JSON:', text.substring(0, 100) + '...');
-        throw new Error(`Erro do servidor (${response.status}): endpoint retornou HTML em vez de JSON`);
-      }
-      
-      // Try to get error details in JSON format
-      try {
-        const errorData = await response.json();
-        throw new Error(errorData.error || `Erro HTTP ${response.status}`);
-      } catch (jsonError) {
-        // If JSON parsing fails, use default message
-        throw new Error(`Erro HTTP! Status: ${response.status}`);
-      }
+      throw new Error(`Erro HTTP! Status: ${response.status}`);
     }
     
     // Process successful response
