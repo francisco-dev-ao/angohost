@@ -24,12 +24,30 @@ import { FileText, Eye, Download } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { formatPrice } from '@/utils/formatters';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useInvoices } from '@/hooks/useInvoices';
+import { toast } from 'sonner';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const OrdersPage = () => {
   const { orders, isLoading } = useOrders();
+  const { downloadInvoice } = useInvoices();
   const navigate = useNavigate();
   const [selectedOrder, setSelectedOrder] = useState<string | null>(null);
   const [showDetails, setShowDetails] = useState<boolean>(false);
+
+  // Handle invoice download
+  const handleDownloadInvoice = (invoiceId: string) => {
+    if (!invoiceId) {
+      toast.error('Nenhuma fatura disponível para este pedido');
+      return;
+    }
+    
+    try {
+      downloadInvoice(invoiceId);
+    } catch (error: any) {
+      toast.error('Erro ao baixar fatura: ' + error.message);
+    }
+  };
 
   return (
     <div className="space-y-8">
@@ -118,7 +136,11 @@ const OrdersPage = () => {
                           Detalhes
                         </Button>
                         {order.invoice && (
-                          <Button variant="outline" size="sm">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleDownloadInvoice(order.invoice.id)}
+                          >
                             <Download className="h-4 w-4 mr-1" />
                             Fatura
                           </Button>
@@ -133,7 +155,40 @@ const OrdersPage = () => {
         </Card>
       )}
       
-      {/* Modal para detalhes do pedido seria implementado aqui */}
+      {/* Detalhes do pedido (simples, pode ser expandido depois) */}
+      <Dialog open={showDetails} onOpenChange={setShowDetails}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Detalhes do Pedido</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            {selectedOrder && orders.find(o => o.id === selectedOrder) && (
+              <div>
+                <h4 className="font-semibold mb-2">Itens:</h4>
+                <ul className="space-y-2">
+                  {orders.find(o => o.id === selectedOrder)?.items.map((item: any, index: number) => (
+                    <li key={index} className="border-b pb-2">
+                      <div className="flex justify-between">
+                        <span>{item.name || item.title}</span>
+                        <span>{formatPrice(item.price)}</span>
+                      </div>
+                      {item.quantity > 1 && (
+                        <div className="text-sm text-muted-foreground">
+                          Quantidade: {item.quantity}
+                        </div>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+                <div className="mt-4 flex justify-between font-semibold">
+                  <span>Total:</span>
+                  <span>{formatPrice(orders.find(o => o.id === selectedOrder)?.total_amount || 0)}</span>
+                </div>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { toast } from 'sonner';
 import { Order } from '@/types/client';
+import { executeQuery } from '@/utils/database';
 
 export const useOrders = () => {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -15,35 +16,78 @@ export const useOrders = () => {
     
     try {
       setIsLoading(true);
-      const { data, error } = await supabase
-        .from('orders')
-        .select('*, invoices:invoices(id, invoice_number)')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+      
+      // For development or preview environments
+      if (import.meta.env.DEV || window.location.hostname.includes('lovable.app')) {
+        setTimeout(() => {
+          const mockOrders: Order[] = [
+            {
+              id: "order123",
+              order_number: "ORD-20250502-1234",
+              user_id: user.id,
+              total_amount: 15000,
+              status: 'completed',
+              payment_status: 'paid',
+              created_at: new Date().toISOString(),
+              payment_method: 'bank_transfer_option',
+              client_details: {
+                name: 'Cliente de Teste',
+                email: 'cliente@exemplo.com',
+                phone: '+244 923 456 789',
+                address: 'Luanda, Angola'
+              },
+              items: [{
+                name: "Domínio exemplo.ao",
+                price: 15000,
+                quantity: 1
+              }],
+              invoice: {
+                id: "1",
+                invoice_number: "INV-20250502-1234"
+              }
+            }
+          ];
+          setOrders(mockOrders);
+          setIsLoading(false);
+        }, 800);
+        return;
+      }
+      
+      // For production environment
+      const result = await executeQuery(
+        `SELECT o.*, i.id as invoice_id, i.invoice_number 
+         FROM orders o 
+         LEFT JOIN invoices i ON o.id = i.order_id
+         WHERE o.user_id = $1 
+         ORDER BY o.created_at DESC`,
+        [user.id]
+      );
         
-      if (error) throw error;
-      
-      // Ensure the data matches our Order type
-      const formattedOrders: Order[] = (data || []).map(order => ({
-        id: order.id,
-        order_number: order.order_number,
-        user_id: order.user_id,
-        total_amount: order.total_amount,
-        // Convert 'canceled' to 'cancelled' to match the expected type
-        status: order.status === 'canceled' ? 'cancelled' : order.status as any,
-        created_at: order.created_at,
-        payment_method: order.payment_method,
-        // Map payment_status to one of the allowed values
-        payment_status: mapPaymentStatus(order.payment_status),
-        client_details: parseClientDetails(order.client_details),
-        items: Array.isArray(order.items) ? order.items : parseJsonItems(order.items),
-        invoice: order.invoices?.[0] ? {
-          id: order.invoices[0].id,
-          invoice_number: order.invoices[0].invoice_number
-        } : undefined
-      }));
-      
-      setOrders(formattedOrders);
+      if (result.success) {
+        // Ensure the data matches our Order type
+        const formattedOrders: Order[] = (result.data || []).map((order: any) => ({
+          id: order.id,
+          order_number: order.order_number,
+          user_id: order.user_id,
+          total_amount: order.total_amount,
+          // Convert 'canceled' to 'cancelled' to match the expected type
+          status: order.status === 'canceled' ? 'cancelled' : order.status as any,
+          created_at: order.created_at,
+          payment_method: order.payment_method,
+          // Map payment_status to one of the allowed values
+          payment_status: mapPaymentStatus(order.payment_status),
+          client_details: parseClientDetails(order.client_details),
+          items: Array.isArray(order.items) ? order.items : parseJsonItems(order.items),
+          invoice: order.invoice_id ? {
+            id: order.invoice_id,
+            invoice_number: order.invoice_number
+          } : undefined
+        }));
+        
+        setOrders(formattedOrders);
+      } else {
+        throw new Error(result.error || 'Erro ao buscar pedidos');
+      }
     } catch (error: any) {
       toast.error('Erro ao carregar pedidos: ' + error.message);
     } finally {

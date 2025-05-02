@@ -1,4 +1,3 @@
-
 /**
  * Database utility functions for browser environment
  * Uses fetch API to call server endpoints instead of direct pg connection
@@ -221,6 +220,32 @@ export const executeQuery = async (query: string, params?: any[]): Promise<Query
         };
       }
       
+      // Dados simulados para pedidos
+      if (query.toLowerCase().includes('select') && query.toLowerCase().includes('orders')) {
+        return {
+          success: true,
+          data: [{
+            id: "order123",
+            user_id: "user123",
+            order_number: "ORD-20250502-1234",
+            total_amount: 15000,
+            status: "completed",
+            payment_status: "paid",
+            created_at: new Date().toISOString(),
+            items: [{
+              name: "Domínio exemplo.ao",
+              price: 15000,
+              quantity: 1
+            }],
+            invoice: {
+              id: "1", 
+              invoice_number: "INV-20250502-1234"
+            }
+          }],
+          rowCount: 1
+        };
+      }
+      
       // Default success response with empty data
       return {
         success: true,
@@ -367,7 +392,7 @@ if (import.meta.env.DEV && typeof window !== 'undefined') {
     (window as any).__mockDbResponses = {
       testConnection: { 
         success: true, 
-        data: { connected: 1 },
+        data: [{ connected: 1 }],
         message: "Conexão com o banco de dados simulada (dev mode)" 
       },
       executeQuery: { 

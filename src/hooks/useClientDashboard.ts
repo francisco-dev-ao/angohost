@@ -39,7 +39,7 @@ export const useClientDashboard = () => {
               activeServices: 3,
               activeDomains: 2,
               pendingInvoices: 1,
-              totalSpent: "75.000",
+              totalSpent: 75000,
             });
             setIsLoading(false);
           }, 800);
@@ -80,7 +80,7 @@ export const useClientDashboard = () => {
             activeServices: parseInt(servicesResult.data?.[0]?.count || '0'),
             activeDomains: parseInt(domainsResult.data?.[0]?.count || '0'),
             pendingInvoices: parseInt(invoicesResult.data?.[0]?.count || '0'),
-            totalSpent: parseInt(spentResult.data?.[0]?.sum || '0').toLocaleString('pt-AO'),
+            totalSpent: parseInt(spentResult.data?.[0]?.sum || '0'),
           });
         } else {
           throw new Error("Falha ao buscar dados do dashboard");
@@ -94,7 +94,7 @@ export const useClientDashboard = () => {
           activeServices: 0,
           activeDomains: 0,
           pendingInvoices: 0,
-          totalSpent: "0",
+          totalSpent: 0,
         });
       } finally {
         setIsLoading(false);

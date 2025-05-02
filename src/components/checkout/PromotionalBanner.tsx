@@ -8,7 +8,7 @@ interface PromotionalBannerProps {
 }
 
 const PromotionalBanner = ({ 
-  message = "Oferta especial por tempo limitado!",
+  message = "Oferta especial: preços promocionais por tempo limitado!",
   className = "",
   isSticky = false
 }: PromotionalBannerProps) => {

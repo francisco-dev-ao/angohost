@@ -4,9 +4,10 @@ import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/componen
 import { CircleDollarSign, Package, Receipt, Users } from "lucide-react";
 import { useClientDashboard } from "@/hooks/useClientDashboard";
 import { Skeleton } from "@/components/ui/skeleton";
+import PromotionalBanner from '../checkout/PromotionalBanner';
+import { formatPrice } from '@/utils/formatters';
 
 const ClientDashboard = () => {
-  // Fix the destructuring to match the type definition
   const { stats, isLoading, error } = useClientDashboard();
 
   if (error) {
@@ -20,6 +21,9 @@ const ClientDashboard = () => {
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-bold">Dashboard</h1>
+      
+      {/* Mostrar apenas um banner promocional */}
+      <PromotionalBanner message="Oferta especial: preços promocionais por tempo limitado!" />
       
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
         <StatsCard 
@@ -48,7 +52,7 @@ const ClientDashboard = () => {
         
         <StatsCard 
           title="Total Investido" 
-          value={isLoading ? undefined : `${stats.totalSpent}Kz`}
+          value={isLoading ? undefined : formatPrice(stats.totalSpent)}
           icon={<CircleDollarSign className="text-primary" />}
           description="Valor total investido"
           isLoading={isLoading}

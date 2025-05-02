@@ -21,6 +21,16 @@ const PaymentStep = ({
   prevStep,
   isSaving 
 }: PaymentStepProps) => {
+  // Garantir que pelo menos o método de transferência bancária esteja disponível
+  const availablePaymentMethods = paymentMethods.length > 0 ? paymentMethods : [
+    {
+      id: "bank_transfer_option",
+      name: "Transferência Bancária",
+      payment_type: "bank_transfer",
+      description: "Pague por transferência bancária e envie o comprovante"
+    }
+  ];
+
   return (
     <>
       <CardTitle className="mb-4">Método de Pagamento</CardTitle>
@@ -30,7 +40,7 @@ const PaymentStep = ({
         onValueChange={handlePaymentMethodChange}
         className="space-y-4"
       >
-        {paymentMethods.map((method) => (
+        {availablePaymentMethods.map((method) => (
           <div 
             key={method.id} 
             className={`flex items-center justify-between border rounded-md p-4 ${
