@@ -43,7 +43,7 @@ const PaymentOptionsSection = ({
         <CardDescription>Selecione como deseja prosseguir com o pagamento</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="flex items-center space-x-2 mb-6 border p-4 rounded-md">
+        <div className="flex items-center space-x-2 mb-6 border p-4 rounded-md bg-primary/5 border-primary/20">
           <Switch 
             id="skip-payment" 
             checked={skipPayment}
@@ -51,7 +51,10 @@ const PaymentOptionsSection = ({
           />
           <Label htmlFor="skip-payment" className="flex items-center cursor-pointer">
             <FileText className="h-4 w-4 mr-2" />
-            Gerar apenas fatura (sem pagamento imediato)
+            <span>
+              <span className="font-medium">Gerar apenas fatura</span> 
+              <span className="block text-sm text-muted-foreground">(sem pagamento imediato)</span>
+            </span>
           </Label>
         </div>
         
@@ -116,7 +119,7 @@ const PaymentOptionsSection = ({
         <Button type="button" variant="ghost" onClick={() => navigate('/cart')}>
           Voltar para o carrinho
         </Button>
-        <Button type="submit" disabled={isSaving || (!skipPayment && paymentMethods.length === 0)}>
+        <Button type="submit" disabled={isSaving}>
           {isSaving ? 'Processando...' : 'Finalizar compra'}
         </Button>
       </CardFooter>

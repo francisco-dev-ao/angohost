@@ -12,7 +12,7 @@ export const useCheckoutForm = () => {
   const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string | null>(null);
-  const [skipPayment, setSkipPayment] = useState(false);
+  const [skipPayment, setSkipPayment] = useState(true); // Default to true (skip payment)
   
   const [formData, setFormData] = useState({
     name: user?.user_metadata?.full_name || '',
@@ -74,6 +74,20 @@ export const useCheckoutForm = () => {
           is_active: true,
           payment_type: 'bank_transfer',
           description: 'Pague por transferência bancária e envie o comprovante'
+        },
+        { 
+          id: 'credit_card_option', 
+          name: 'Cartão de Crédito', 
+          is_active: true,
+          payment_type: 'credit_card',
+          description: 'Pague com seu cartão de crédito'
+        },
+        { 
+          id: 'pix_option', 
+          name: 'PIX', 
+          is_active: true,
+          payment_type: 'pix',
+          description: 'Faça um pagamento instantâneo via PIX'
         }
       ];
       
@@ -87,25 +101,32 @@ export const useCheckoutForm = () => {
       const allMethods = [...defaultMethods, ...(data || [])];
       setPaymentMethods(allMethods);
       
-      const defaultMethod = allMethods.find(m => m.payment_type === 'bank_transfer');
-      if (defaultMethod) {
-        setSelectedPaymentMethod(defaultMethod.id);
-      } else if (allMethods.length > 0) {
+      // Default payment method (though we're defaulting to skipPayment now)
+      if (allMethods.length > 0) {
         setSelectedPaymentMethod(allMethods[0].id);
       }
     } catch (error: any) {
       console.error('Error fetching payment methods:', error);
       toast.error('Erro ao carregar métodos de pagamento');
       
-      const bankTransfer = { 
-        id: 'bank_transfer_option', 
-        name: 'Transferência Bancária', 
-        is_active: true,
-        payment_type: 'bank_transfer',
-        description: 'Pague por transferência bancária e envie o comprovante'
-      };
-      setPaymentMethods([bankTransfer]);
-      setSelectedPaymentMethod('bank_transfer_option');
+      const defaultMethods = [
+        { 
+          id: 'bank_transfer_option', 
+          name: 'Transferência Bancária', 
+          is_active: true,
+          payment_type: 'bank_transfer',
+          description: 'Pague por transferência bancária e envie o comprovante'
+        },
+        { 
+          id: 'pix_option', 
+          name: 'PIX', 
+          is_active: true,
+          payment_type: 'pix',
+          description: 'Faça um pagamento instantâneo via PIX'
+        }
+      ];
+      setPaymentMethods(defaultMethods);
+      setSelectedPaymentMethod(defaultMethods[0].id);
     } finally {
       setLoading(false);
     }

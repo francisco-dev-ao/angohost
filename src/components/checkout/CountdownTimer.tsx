@@ -46,7 +46,7 @@ const CountdownTimer = ({
   };
 
   return (
-    <div className={`bg-primary/90 text-white rounded-lg p-4 ${className}`}>
+    <div className={`bg-primary text-white rounded-lg p-4 ${className}`}>
       <div className="flex flex-col md:flex-row items-center justify-center gap-3">
         <div className="flex items-center gap-2">
           <Clock className="h-5 w-5" />

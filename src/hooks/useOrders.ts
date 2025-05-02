@@ -36,7 +36,7 @@ export const useOrders = () => {
         // Map payment_status to one of the allowed values
         payment_status: mapPaymentStatus(order.payment_status),
         client_details: parseClientDetails(order.client_details),
-        items: Array.isArray(order.items) ? order.items : [],
+        items: Array.isArray(order.items) ? order.items : parseJsonItems(order.items),
         invoice: order.invoices?.[0] ? {
           id: order.invoices[0].id,
           invoice_number: order.invoices[0].invoice_number
@@ -86,6 +86,20 @@ export const useOrders = () => {
     } catch (e) {
       // If parsing fails, return empty object
       return { name: '', email: '', phone: '', address: '' };
+    }
+  };
+
+  // Helper function to parse JSON items
+  const parseJsonItems = (items: any): any[] => {
+    if (!items) return [];
+    
+    try {
+      if (typeof items === 'string') {
+        return JSON.parse(items);
+      }
+      return Array.isArray(items) ? items : [items];
+    } catch (e) {
+      return [];
     }
   };
 

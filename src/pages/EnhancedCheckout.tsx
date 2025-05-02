@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import EnhancedCheckout from '@/components/checkout/EnhancedCheckout';
 import { useCart } from '@/contexts/CartContext';
@@ -14,8 +14,8 @@ import { LoginForm } from '@/components/auth/LoginForm';
 import { RegisterForm } from '@/components/auth/RegisterForm';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { toast } from 'sonner';
-import CountdownTimer from '@/components/checkout/CountdownTimer';
 import PromotionalBanner from '@/components/checkout/PromotionalBanner';
+import CountdownTimer from '@/components/checkout/CountdownTimer';
 
 const EnhancedCheckoutPage = () => {
   const navigate = useNavigate();
@@ -26,8 +26,21 @@ const EnhancedCheckoutPage = () => {
   const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false);
   const [authTab, setAuthTab] = useState('login');
   const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const [showStickyBanner, setShowStickyBanner] = useState(false);
   
   const { signIn, signUp } = useSupabaseAuth();
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollPosition = window.scrollY;
+      setShowStickyBanner(scrollPosition > 300);
+    };
+    
+    window.addEventListener('scroll', handleScroll);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
 
   const handleLogin = async (email: string, password: string) => {
     setIsAuthenticating(true);
@@ -112,6 +125,10 @@ const EnhancedCheckoutPage = () => {
 
   return (
     <Layout>
+      {showStickyBanner && (
+        <PromotionalBanner isSticky={true} className="shadow-md" />
+      )}
+      
       <motion.div 
         className="bg-gradient-to-b from-gray-50 to-white min-h-[80vh] py-12"
         initial={{ opacity: 0 }}
