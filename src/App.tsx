@@ -10,12 +10,11 @@ import NotFound from './pages/NotFound';
 import Cart from './pages/Cart';
 import Checkout from './pages/Checkout';
 import Domains from './pages/Domains';
-import CpanelHosting from './pages/CpanelHosting';
-import WordPressHosting from './pages/WordPressHosting';
-import CpanelHostingPurchase from './pages/CpanelHostingPurchase';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { AdminRoute } from '@/components/AdminRoute';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
+import Packages from './pages/Packages';
+import PackageDetails from './pages/PackageDetails';
 
 function App() {
   const { loading } = useSupabaseAuth();
@@ -42,8 +41,8 @@ function App() {
         <Route path="/login" element={<Auth />} />
         <Route path="/register" element={<Auth />} />
         <Route path="/domains" element={<Domains />} />
-        <Route path="/products/cpanel" element={<CpanelHosting />} />
-        <Route path="/products/wordpress" element={<WordPressHosting />} />
+        <Route path="/packages" element={<Packages />} />
+        <Route path="/packages/:id" element={<PackageDetails />} />
         <Route path="/terms" element={<NotFound />} />
         <Route path="/privacy" element={<NotFound />} />
         <Route path="/cart" element={<Cart />} />
@@ -72,9 +71,6 @@ function App() {
         <Route path="/admin/hosting" element={<AdminRoute><NotFound /></AdminRoute>} />
         <Route path="/admin/hosting/create" element={<AdminRoute><NotFound /></AdminRoute>} />
         <Route path="/admin/hosting/edit/:id" element={<AdminRoute><NotFound /></AdminRoute>} />
-
-        {/* CPanel Hosting Purchase Route */}
-        <Route path="/products/cpanel/purchase" element={<CpanelHostingPurchase />} />
         
         <Route path="*" element={<NotFound />} />
       </Routes>
