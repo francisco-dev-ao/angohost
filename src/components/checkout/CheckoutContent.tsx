@@ -14,6 +14,14 @@ import PaymentStep from "./steps/PaymentStep";
 import OrderConfirmation from "./steps/OrderConfirmation";
 import { supabase } from "@/integrations/supabase/client";
 
+type FormData = {
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+  country: string;
+};
+
 const CheckoutContent = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [paymentMethod, setPaymentMethod] = useState<string | null>(null);
@@ -21,7 +29,7 @@ const CheckoutContent = () => {
   const { items, total } = useCart();
   const { user } = useSupabaseAuth();
   const navigate = useNavigate();
-  const { register, handleSubmit, formState: { errors }, setValue, watch } = useForm({
+  const { register, handleSubmit, formState: { errors }, setValue, watch } = useForm<FormData>({
     defaultValues: {
       name: '',
       email: '',
@@ -89,7 +97,7 @@ const CheckoutContent = () => {
 
   // Handle form submission based on current step
   const formData = watch();
-  const { handleSubmit: submitOrder, isSaving } = useOrderSubmission(formData, paymentMethod);
+  const { handleSubmit: submitOrderHandler, isSaving } = useOrderSubmission(formData, paymentMethod);
   
   const nextStep = () => {
     if (currentStep < 3) setCurrentStep(currentStep + 1);
@@ -101,6 +109,12 @@ const CheckoutContent = () => {
 
   const handlePaymentMethodChange = (methodId: string) => {
     setPaymentMethod(methodId);
+  };
+
+  // Fix TS error by properly handling React Hook Form's submit
+  const onSubmit = () => {
+    // This wrapper allows us to use the react-hook-form handler with our custom submission
+    submitOrderHandler();
   };
 
   if (items.length === 0) {
@@ -162,7 +176,7 @@ const CheckoutContent = () => {
       
       <div className="lg:col-span-2">
         <OrderSummary 
-          onSubmit={handleSubmit(submitOrder)}
+          onSubmit={handleSubmit(onSubmit)}
           currentStep={currentStep}
           canProceed={currentStep === 2 && !!paymentMethod}
         />

@@ -16,7 +16,10 @@ import ContactProfilesPage from '@/components/client/ContactProfilesPage';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 
 const ClientArea = () => {
-  const { user, isLoading } = useSupabaseAuth();
+  const auth = useSupabaseAuth();
+  // Change from isLoading to loading to match the actual property name
+  const isLoading = auth.loading;
+  const { user } = auth;
 
   // Redirect to login if not authenticated
   if (!isLoading && !user) {
