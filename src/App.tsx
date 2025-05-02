@@ -35,8 +35,8 @@ import ClientLayout from './pages/client/ClientLayout';
 import ClientDomains from './pages/client/ClientDomains';
 import ClientProfile from './pages/client/ClientProfile';
 import ClientServices from './pages/client/ClientServices';
-import ClientArea from './pages/ClientArea';
 import ClientInvoices from './pages/client/ClientInvoices';
+import OrdersPage from './components/client/OrdersPage';
 import CpanelHosting from './pages/CpanelHosting';
 import ProfessionalEmail from './pages/ProfessionalEmail';
 import ExchangeOnline from './pages/ExchangeOnline';
@@ -90,19 +90,19 @@ function App() {
             <Route path="/admin/email-templates" element={<AdminProtectedRoute><AdminEmailTemplates /></AdminProtectedRoute>} />
             <Route path="/admin/settings" element={<AdminProtectedRoute><AdminSettings /></AdminProtectedRoute>} />
 
-            {/* Client Routes - Support both /client/* and direct access to /client-area */}
+            {/* Client Routes */}
             <Route path="/client" element={<ClientLayout />}>
               <Route index element={<ClientDomains />} />
               <Route path="domains" element={<ClientDomains />} />
               <Route path="profile" element={<ClientProfile />} />
               <Route path="services" element={<ClientServices />} />
-              <Route path="orders" element={<ClientArea />} />
+              <Route path="orders" element={<OrdersPage />} />
               <Route path="invoices" element={<ClientInvoices />} />
             </Route>
 
-            {/* Direct routes */}
-            <Route path="/client-area" element={<ClientArea />} />
-            <Route path="/client-area/*" element={<ClientArea />} />
+            {/* Direct routes - redirect to client area */}
+            <Route path="/client-area/*" element={<Navigate to="/client/orders" replace />} />
+            <Route path="/client-area" element={<Navigate to="/client/orders" replace />} />
             <Route path="/services" element={<Navigate to="/client/services" replace />} />
             <Route path="/orders" element={<Navigate to="/client/orders" replace />} />
             <Route path="/invoices" element={<Navigate to="/client/invoices" replace />} />

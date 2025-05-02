@@ -1,176 +1,154 @@
 
 import { useState } from 'react';
+import { useCart } from '@/contexts/CartContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { toast } from 'sonner';
-import { useCart } from '@/contexts/CartContext';
-import { executeQuery } from '@/utils/database';
+import { useNavigate } from 'react-router-dom';
+import { CartItem } from '@/types/cart';
 
-export const useSaveOrder = () => {
+export const useOrderSubmission = (formData: any, paymentMethod: string | null) => {
   const [isSaving, setIsSaving] = useState(false);
+  const { items, total, clearCart } = useCart();
   const { user } = useSupabaseAuth();
-  const { items, clearCart } = useCart();
-  
-  const generateOrderNumber = () => {
-    const timestamp = Date.now().toString().slice(-6);
-    const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
-    return `ORD-${timestamp}-${random}`;
-  };
+  const navigate = useNavigate();
 
-  const saveCartAsOrder = async (orderData?: {
-    paymentMethodId?: string;
-    clientDetails?: any;
-    skipPayment?: boolean;
-  }) => {
-    if (!user) {
-      toast.error('Você precisa estar logado para salvar o pedido');
-      return null;
-    }
-    
-    if (items.length === 0) {
-      toast.error('Seu carrinho está vazio');
-      return null;
+  const handleSubmit = async () => {
+    if (!user || !paymentMethod) {
+      toast.error('Para finalizar o pedido, faça login e selecione um método de pagamento');
+      return;
     }
 
     try {
       setIsSaving(true);
-      const orderNumber = generateOrderNumber();
-      const totalAmount = items.reduce((acc, item) => acc + (item.price * item.quantity), 0);
       
-      // Mark any abandoned cart as recovered
-      if (user) {
-        try {
-          await supabase
-            .from('cart_abandonments')
-            .update({ 
-              is_recovered: true,
-              recovered_at: new Date().toISOString()
-            })
-            .eq('user_id', user.id)
-            .eq('is_recovered', false);
-        } catch (e) {
-          // Non-critical, just log the error
-          console.error('Failed to mark cart as recovered:', e);
-        }
-      }
-      
-      // Default to bank transfer if no payment method is selected
-      let paymentMethodValue = orderData?.paymentMethodId || 'bank_transfer_option';
-      
-      // Properly format client details to avoid JSON parsing issues
-      const clientDetails = orderData?.clientDetails ? 
-        (typeof orderData.clientDetails === 'string' ? 
-          orderData.clientDetails : JSON.stringify(orderData.clientDetails)) : 
-        null;
-      
-      // Format items to ensure they're a valid JSON array and not a string
-      const formattedItems = items.map(item => ({
-        title: item.title || "Produto",
-        name: item.title || "Produto",
-        quantity: item.quantity,
-        price: item.price,
-        type: item.type || 'product',
-        domain: item.domain || null,
-        service_type: item.service_type || null
-      }));
-      
+      // Format client details
+      const clientDetails = {
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        address: formData.address,
+      };
+
+      // Generate order number
+      const orderNumber = `ORD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+
       // Create order in database
-      const { data, error } = await supabase
+      const { data: orderData, error: orderError } = await supabase
         .from('orders')
         .insert({
           order_number: orderNumber,
           user_id: user.id,
-          status: orderData?.skipPayment ? 'processing' : 'pending',
-          items: formattedItems,
-          total_amount: totalAmount,
-          payment_status: orderData?.skipPayment ? 'pending_invoice' : 'pending',
-          payment_method: paymentMethodValue,
+          total_amount: total,
+          items: items,
+          status: 'pending',
+          payment_method: paymentMethod,
+          payment_status: 'pending',
           client_details: clientDetails
         })
-        .select()
+        .select('id')
         .single();
 
-      if (error) {
-        throw error;
-      }
-      
-      // Process services and domains directly from the order items
-      for (const item of formattedItems) {
-        if (item.type === 'domain' && item.domain) {
-          // Create domain entry
-          const { error: domainError } = await supabase
-            .from('client_domains')
-            .insert({
-              user_id: user.id,
-              domain_name: item.domain,
-              registration_date: new Date().toISOString(),
-              expiry_date: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
-              status: 'active',
-              auto_renew: true
-            });
-            
-          if (domainError) {
-            console.error('Error creating domain:', domainError);
-          }
-        } 
-        else if (['cpanel-hosting', 'wordpress-hosting', 'vps-hosting', 'dedicated-servers'].includes(item.service_type)) {
-          // Create service entry
-          const { error: serviceError } = await supabase
-            .from('client_services')
-            .insert({
-              user_id: user.id,
-              name: item.title,
-              service_type: item.service_type,
-              price_monthly: item.price / 12, // Convert to monthly price if yearly
-              price_yearly: item.price,
-              renewal_date: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
-              status: 'active',
-              auto_renew: true
-            });
-            
-          if (serviceError) {
-            console.error('Error creating service:', serviceError);
-          }
+      if (orderError) throw orderError;
+
+      // Process items based on their type
+      for (const item of items) {
+        // Determine item type
+        const itemType = determineItemType(item);
+        
+        if (itemType === 'domain') {
+          // Create domain record
+          await processDomain(item, user.id);
+        } else if (itemType === 'service') {
+          // Create service record
+          await processService(item, user.id);
         }
       }
-      
-      // Create invoice for the order
-      const invoiceNumber = `INV-${Date.now().toString().slice(-8)}`;
-      const { error: invoiceError } = await supabase
-        .from('invoices')
-        .insert({
-          user_id: user.id,
-          invoice_number: invoiceNumber,
-          amount: totalAmount,
-          status: 'pending',
-          due_date: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(), // Due in 15 days
-          items: formattedItems,
-          order_id: data.id,
-          client_details: clientDetails,
-          company_details: {
-            name: 'AngoHost',
-            address: 'Av. Principal, Luanda, Angola',
-            phone: '+244 923 456 789',
-            email: 'faturacao@angohost.ao'
-          }
-        });
-        
-      if (invoiceError) {
-        console.error('Error creating invoice:', invoiceError);
-      }
-      
-      // Clear cart after successful order creation
+
+      // Success - clear cart and redirect
+      toast.success('Pedido realizado com sucesso!');
       clearCart();
-      
-      toast.success('Pedido salvo com sucesso');
-      return data;
+      navigate(`/client/orders`);
     } catch (error: any) {
-      toast.error('Erro ao salvar o pedido: ' + error.message);
-      return null;
+      console.error('Error saving order:', error);
+      toast.error(`Erro ao salvar pedido: ${error.message}`);
     } finally {
       setIsSaving(false);
     }
   };
 
-  return { saveCartAsOrder, isSaving };
+  // Helper function to determine item type
+  const determineItemType = (item: CartItem): 'domain' | 'service' | 'other' => {
+    const name = item.name.toLowerCase();
+    
+    if (name.includes('domínio') || name.includes('dominio') || 
+        name.includes('domain') || item.type === 'domain') {
+      return 'domain';
+    }
+    
+    if (name.includes('hostin') || name.includes('vps') || 
+        name.includes('servidor') || name.includes('server') || 
+        name.includes('wordpress') || name.includes('email') || 
+        name.includes('cpanel') || item.type === 'service') {
+      return 'service';
+    }
+    
+    return 'other';
+  };
+
+  // Process domain items
+  const processDomain = async (item: CartItem, userId: string) => {
+    const domain = item.name.split(' ')[0]; // Extract domain name
+    const registrationDate = new Date();
+    const expiryDate = new Date();
+    expiryDate.setFullYear(expiryDate.getFullYear() + 1); // Default 1 year registration
+    
+    await supabase.from('domains').insert({
+      domain_name: domain,
+      user_id: userId,
+      status: 'pending',
+      registration_date: registrationDate.toISOString(),
+      expiry_date: expiryDate.toISOString(),
+      auto_renew: true,
+      whois_privacy: false,
+      is_locked: true,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    });
+  };
+
+  // Process service items
+  const processService = async (item: CartItem, userId: string) => {
+    const renewalDate = new Date();
+    renewalDate.setFullYear(renewalDate.getFullYear() + 1); // Default 1 year subscription
+    
+    // Determine service type
+    let serviceType = 'hosting';
+    const name = item.name.toLowerCase();
+    
+    if (name.includes('email')) {
+      serviceType = 'email';
+    } else if (name.includes('vps')) {
+      serviceType = 'vps';
+    } else if (name.includes('dedica')) {
+      serviceType = 'dedicated';
+    } else if (name.includes('wordpress')) {
+      serviceType = 'wordpress';
+    }
+    
+    await supabase.from('services').insert({
+      name: item.name,
+      service_type: serviceType,
+      status: 'pending',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      renewal_date: renewalDate.toISOString(),
+      price_monthly: item.price / 12, // Estimate monthly price
+      price_yearly: item.price,
+      description: item.description || '',
+      user_id: userId
+    });
+  };
+
+  return { handleSubmit, isSaving };
 };
