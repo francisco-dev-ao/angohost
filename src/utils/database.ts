@@ -1,4 +1,3 @@
-
 /**
  * Database utility functions for browser environment
  * Uses fetch API to call server endpoints instead of direct pg connection

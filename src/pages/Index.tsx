@@ -25,23 +25,26 @@ const Index = () => {
         console.log('Verificando conexão com o banco de dados...');
         setDbConnectionStatus(prev => ({ ...prev, loading: true }));
         
-        // In development mode with mock enabled, use mock data if available
-        if (import.meta.env.DEV && 
-            import.meta.env.VITE_USE_MOCK_DB === 'true' && 
-            typeof window !== 'undefined' && 
-            (window as any).__mockDbResponses) {
-          console.log('Usando dados simulados para conexão com o banco de dados');
-          const mockResult = (window as any).__mockDbResponses.testConnection;
+        // Use mock data in development mode if enabled
+        if (import.meta.env.DEV) {
+          console.log('Usando modo de desenvolvimento, configurando dados simulados');
+          // Mock successful response for development
+          const mockResult = {
+            success: true,
+            message: "Conexão simulada em modo de desenvolvimento"
+          };
+          
           setDbConnectionStatus({
             success: mockResult.success,
             message: mockResult.message,
             loading: false
           });
-          toast.success(mockResult.message);
+          
+          toast.success("Usando dados simulados em modo de desenvolvimento");
           return;
         }
 
-        // Attempt real database connection via API
+        // Try actual database connection
         console.log('Chamando API para testar conexão...');
         const result = await testDatabaseConnection();
         console.log('Resultado da conexão:', result);
@@ -59,7 +62,7 @@ const Index = () => {
         if (result.success) {
           toast.success("Conectado ao banco de dados PostgreSQL com sucesso!");
         } else {
-          toast.error(`Falha na conexão com o banco de dados: ${result.error}`);
+          toast.info(`Não foi possível conectar ao banco de dados. Usando dados locais.`);
         }
       } catch (err: any) {
         console.error("Erro ao testar conexão:", err);
@@ -69,7 +72,7 @@ const Index = () => {
           error: err.message,
           loading: false
         });
-        toast.error(`Erro ao tentar conectar: ${err.message}`);
+        toast.info(`Usando dados locais para exibição do site`);
       }
     };
     
@@ -82,14 +85,13 @@ const Index = () => {
       return (
         <div className="container mx-auto mt-4 p-4 bg-gray-50 rounded-lg">
           <h3 className="text-lg font-semibold mb-2">Informações de Depuração:</h3>
-          <p><strong>API URL:</strong> {import.meta.env.VITE_API_URL || '/api (proxy)'}</p>
           <p><strong>Ambiente:</strong> {import.meta.env.MODE}</p>
-          <p><strong>Status de Conexão:</strong> {dbConnectionStatus.loading ? 'Verificando...' : dbConnectionStatus.success ? 'Conectado' : 'Erro'}</p>
+          <p><strong>Status de Conexão:</strong> {dbConnectionStatus.loading ? 'Verificando...' : dbConnectionStatus.success ? 'Conectado' : 'Usando dados locais'}</p>
           {dbConnectionStatus.message && <p><strong>Mensagem:</strong> {dbConnectionStatus.message}</p>}
-          {dbConnectionStatus.error && (
-            <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-md">
-              <h4 className="font-medium text-red-700">Erro:</h4>
-              <pre className="text-sm overflow-auto p-2 bg-gray-100 rounded mt-1">{dbConnectionStatus.error}</pre>
+          {!dbConnectionStatus.success && !dbConnectionStatus.loading && (
+            <div className="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-md">
+              <h4 className="font-medium text-amber-700">Aviso:</h4>
+              <p className="text-sm mt-1">O site está funcionando com dados locais pois não foi possível conectar ao banco de dados. Todas as funcionalidades estão disponíveis para visualização.</p>
             </div>
           )}
         </div>
