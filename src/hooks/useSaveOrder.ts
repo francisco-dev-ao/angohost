@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { toast } from 'sonner';
 import { useCart } from '@/contexts/CartContext';
+import { executeQuery } from '@/utils/database';
 
 export const useSaveOrder = () => {
   const [isSaving, setIsSaving] = useState(false);
@@ -64,11 +65,13 @@ export const useSaveOrder = () => {
       
       // Format items to ensure they're a valid JSON array and not a string
       const formattedItems = items.map(item => ({
+        title: item.title || "Produto",
         name: item.title || "Produto",
         quantity: item.quantity,
         price: item.price,
         type: item.type || 'product',
-        domain: item.domain || null
+        domain: item.domain || null,
+        service_type: item.service_type || null
       }));
       
       // Create order in database
@@ -89,6 +92,71 @@ export const useSaveOrder = () => {
 
       if (error) {
         throw error;
+      }
+      
+      // Process services and domains directly from the order items
+      for (const item of formattedItems) {
+        if (item.type === 'domain' && item.domain) {
+          // Create domain entry
+          const { error: domainError } = await supabase
+            .from('client_domains')
+            .insert({
+              user_id: user.id,
+              domain_name: item.domain,
+              registration_date: new Date().toISOString(),
+              expiry_date: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+              status: 'active',
+              auto_renew: true
+            });
+            
+          if (domainError) {
+            console.error('Error creating domain:', domainError);
+          }
+        } 
+        else if (['cpanel-hosting', 'wordpress-hosting', 'vps-hosting', 'dedicated-servers'].includes(item.service_type)) {
+          // Create service entry
+          const { error: serviceError } = await supabase
+            .from('client_services')
+            .insert({
+              user_id: user.id,
+              name: item.title,
+              service_type: item.service_type,
+              price_monthly: item.price / 12, // Convert to monthly price if yearly
+              price_yearly: item.price,
+              renewal_date: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+              status: 'active',
+              auto_renew: true
+            });
+            
+          if (serviceError) {
+            console.error('Error creating service:', serviceError);
+          }
+        }
+      }
+      
+      // Create invoice for the order
+      const invoiceNumber = `INV-${Date.now().toString().slice(-8)}`;
+      const { error: invoiceError } = await supabase
+        .from('invoices')
+        .insert({
+          user_id: user.id,
+          invoice_number: invoiceNumber,
+          amount: totalAmount,
+          status: 'pending',
+          due_date: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(), // Due in 15 days
+          items: formattedItems,
+          order_id: data.id,
+          client_details: clientDetails,
+          company_details: {
+            name: 'AngoHost',
+            address: 'Av. Principal, Luanda, Angola',
+            phone: '+244 923 456 789',
+            email: 'faturacao@angohost.ao'
+          }
+        });
+        
+      if (invoiceError) {
+        console.error('Error creating invoice:', invoiceError);
       }
       
       // Clear cart after successful order creation

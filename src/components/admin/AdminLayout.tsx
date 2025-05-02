@@ -4,7 +4,6 @@ import AdminSidebar from "@/components/admin/AdminSidebar";
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { supabase } from '@/integrations/supabase/client';
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface AdminLayoutProps {
@@ -14,19 +13,6 @@ interface AdminLayoutProps {
 export default function AdminLayout({ children }: AdminLayoutProps) {
   const navigate = useNavigate();
   const { isAdmin, isLoading } = useAdminAuth();
-
-  const handleSignOut = async () => {
-    try {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-      
-      navigate('/register');
-      toast.success('Sessão encerrada com sucesso');
-    } catch (error) {
-      console.error(error);
-      toast.error('Erro ao encerrar sessão');
-    }
-  };
 
   if (isLoading) {
     return (

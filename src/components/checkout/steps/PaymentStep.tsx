@@ -1,16 +1,14 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, CreditCard, Building, QrCode, Check, Info } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { CardTitle } from "@/components/ui/card";
-import { executeQuery } from "@/utils/database";
 
 interface PaymentStepProps {
   paymentMethod: string | null;
-  paymentMethods: any[]; // Added this prop to match what's being passed
+  paymentMethods: any[];
   handlePaymentMethodChange: (methodId: string) => void;
   prevStep: () => void;
   isSaving: boolean;
@@ -24,7 +22,6 @@ const PaymentStep = ({
   isSaving
 }: PaymentStepProps) => {
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   
   const getPaymentIcon = (type: string) => {
     switch(type) {

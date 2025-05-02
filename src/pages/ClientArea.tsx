@@ -1,9 +1,8 @@
 
 import React from "react";
-import { useNavigate, Routes, Route, Link } from "react-router-dom";
+import { useNavigate, Routes, Route } from "react-router-dom";
 import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
 import { toast } from "sonner";
-import ClientSidebar from "@/components/client/ClientSidebar";
 import ClientDashboard from "@/components/client/ClientDashboard";
 import ProfilePage from "@/components/client/ProfilePage";
 import DomainsPage from "@/components/client/DomainsPage";
@@ -15,12 +14,11 @@ import NotificationsPage from "@/components/client/NotificationsPage";
 import PromotionsPage from "@/components/client/PromotionsPage";
 import OrdersPage from "@/components/client/OrdersPage";
 import ContactProfilesPage from "@/components/client/ContactProfilesPage";
-import { Button } from "@/components/ui/button";
-import { LogOut, Home, Search, ShoppingCart, User } from "lucide-react";
 import { motion } from "framer-motion";
+import ClientLayout from "@/components/client/ClientLayout";
 
 const ClientArea = () => {
-  const { user, loading, signOut } = useSupabaseAuth();
+  const { user, loading } = useSupabaseAuth();
   const navigate = useNavigate();
 
   React.useEffect(() => {
@@ -29,11 +27,6 @@ const ClientArea = () => {
       navigate('/register');
     }
   }, [user, loading, navigate]);
-
-  const handleSignOut = async () => {
-    await signOut();
-    navigate('/');
-  };
 
   if (loading) {
     return (
@@ -51,69 +44,28 @@ const ClientArea = () => {
   }
 
   return (
-    <div className="flex min-h-screen w-full flex-col">
-      {/* Main navigation menu */}
-      <motion.header 
-        className="border-b bg-background shadow-sm"
-        initial={{ y: -100 }}
-        animate={{ y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <div className="container flex h-16 items-center justify-between">
-          <div className="flex items-center gap-6">
-            <Link to="/" className="font-bold text-primary text-xl">
-              AngoHost
-            </Link>
-            <nav className="hidden md:flex gap-6">
-              <Link to="/" className="text-sm font-medium hover:underline">Início</Link>
-              <Link to="/domains" className="text-sm font-medium hover:underline">Domínios</Link>
-              <Link to="/wordpress-hosting" className="text-sm font-medium hover:underline">Hospedagem</Link>
-              <Link to="/vps-hosting" className="text-sm font-medium hover:underline">VPS</Link>
-              <Link to="/professional-email" className="text-sm font-medium hover:underline">E-mail</Link>
-              <Link to="/contact" className="text-sm font-medium hover:underline">Contato</Link>
-            </nav>
-          </div>
-          <div className="flex items-center gap-4">
-            <Button variant="outline" size="icon" asChild>
-              <Link to="/domains">
-                <Search className="h-4 w-4" />
-              </Link>
-            </Button>
-            <Button variant="outline" size="icon" asChild>
-              <Link to="/enhanced-checkout">
-                <ShoppingCart className="h-4 w-4" />
-              </Link>
-            </Button>
-            <Button variant="outline" onClick={handleSignOut} className="hidden md:flex">
-              <LogOut className="h-4 w-4 mr-2" />
-              Sair
-            </Button>
-          </div>
-        </div>
-      </motion.header>
-      
-      <div className="flex flex-1">
-        <ClientSidebar />
-        
-        <div className="flex-1">
-          <div className="container py-8">
-            <Routes>
-              <Route path="/" element={<ClientDashboard />} />
-              <Route path="/profile" element={<ProfilePage />} />
-              <Route path="/domains" element={<DomainsPage />} />
-              <Route path="/services" element={<ServicesPage />} />
-              <Route path="/invoices" element={<InvoicesPage />} />
-              <Route path="/payment-methods" element={<PaymentMethodsPage />} />
-              <Route path="/support" element={<SupportPage />} />
-              <Route path="/notifications" element={<NotificationsPage />} />
-              <Route path="/promotions" element={<PromotionsPage />} />
-              <Route path="/orders" element={<OrdersPage />} />
-              <Route path="/contact-profiles" element={<ContactProfilesPage />} />
-            </Routes>
-          </div>
-        </div>
-      </div>
-    </div>
+    <motion.div 
+      className="min-h-screen"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+    >
+      <ClientLayout>
+        <Routes>
+          <Route path="/" element={<ClientDashboard />} />
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/domains" element={<DomainsPage />} />
+          <Route path="/services" element={<ServicesPage />} />
+          <Route path="/invoices" element={<InvoicesPage />} />
+          <Route path="/payment-methods" element={<PaymentMethodsPage />} />
+          <Route path="/support" element={<SupportPage />} />
+          <Route path="/notifications" element={<NotificationsPage />} />
+          <Route path="/promotions" element={<PromotionsPage />} />
+          <Route path="/orders" element={<OrdersPage />} />
+          <Route path="/contact-profiles" element={<ContactProfilesPage />} />
+        </Routes>
+      </ClientLayout>
+    </motion.div>
   );
 };
 

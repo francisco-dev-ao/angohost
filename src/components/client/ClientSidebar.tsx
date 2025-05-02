@@ -9,19 +9,15 @@ import {
   CreditCard, 
   FileText, 
   Home, 
-  LayoutGrid, 
   LogOut, 
-  Mail, 
-  Package, 
   Server, 
-  Settings, 
   Ticket, 
   User,
   Users,
   Globe,
   ChevronLeft,
   ChevronRight,
-  Shield,
+  Package,
   Receipt
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -90,16 +86,6 @@ const ClientSidebar = () => {
       href: "/client/support",
       icon: <Ticket className="h-5 w-5" />,
     },
-    {
-      title: "Notificações",
-      href: "/client/notifications",
-      icon: <Mail className="h-5 w-5" />,
-    },
-    {
-      title: "Promoções",
-      href: "/client/promotions",
-      icon: <LayoutGrid className="h-5 w-5" />,
-    },
   ];
 
   // Add link to admin area if user is administrator
@@ -107,41 +93,8 @@ const ClientSidebar = () => {
     menuItems.push({
       title: "Área Administrativa",
       href: "/admin",
-      icon: <Settings className="h-5 w-5" />,
+      icon: <Home className="h-5 w-5" />,
     });
-
-    // For super admin (support@angohost.ao), add direct links to key admin areas
-    if (isSuperAdmin) {
-      menuItems.push({
-        title: "Gerenciar Usuários",
-        href: "/admin/users",
-        icon: <Shield className="h-5 w-5" />,
-      });
-      
-      menuItems.push({
-        title: "Gerenciar Pedidos",
-        href: "/admin/orders",
-        icon: <Package className="h-5 w-5" />,
-      });
-      
-      menuItems.push({
-        title: "Gerenciar Faturas",
-        href: "/admin/invoices",
-        icon: <Receipt className="h-5 w-5" />,
-      });
-      
-      menuItems.push({
-        title: "Configurações",
-        href: "/admin/settings",
-        icon: <Settings className="h-5 w-5" />,
-      });
-      
-      menuItems.push({
-        title: "Templates de Email",
-        href: "/admin/email-templates",
-        icon: <Mail className="h-5 w-5" />,
-      });
-    }
   }
 
   const handleSignOut = async () => {
