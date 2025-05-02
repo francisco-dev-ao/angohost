@@ -10,48 +10,53 @@ export const checkDomainAvailability = async (domain: string): Promise<DomainChe
   try {
     console.log(`Verificando disponibilidade do domínio: ${domain}`);
     
-    // Em um ambiente de produção, chamaríamos uma API real
-    // Aqui vamos simular a consulta com um timeout
-    const response = await fetch(`${getApiBaseUrl()}/dns/check?domain=${encodeURIComponent(domain)}`)
-      .catch(() => {
-        // Fallback para simulação quando API não está disponível
-        return new Promise<Response>((resolve) => {
-          setTimeout(() => {
-            // Simular resultados baseados no nome do domínio para teste
-            const isCommonTld = domain.endsWith('.com') || domain.endsWith('.org') || domain.endsWith('.net');
-            const isShortName = domain.split('.')[0].length <= 5;
-            
-            // Domínios curtos com TLDs comuns têm maior probabilidade de estarem ocupados
-            const isAvailable = !(isCommonTld && isShortName) && Math.random() > 0.3;
-            
-            const mockResponse = {
-              available: isAvailable,
-              domain,
-              records: isAvailable ? [] : [
-                { type: 'A', value: '198.51.100.123' },
-                { type: 'NS', value: 'ns1.example.com' },
-              ]
-            };
-            
-            resolve({
-              ok: true,
-              json: () => Promise.resolve(mockResponse),
-            } as Response);
-          }, 800);
-        });
-      });
-
-    if (!response.ok) {
-      throw new Error(`Erro ao verificar domínio: ${response.statusText}`);
-    }
+    // Usar a API externa de verificação de domínios
+    const apiUrl = `https://angoweb.net/dominios-2/?domain=${encodeURIComponent(domain)}`;
     
-    const result = await response.json();
-    return {
-      domain,
-      available: result.available,
-      records: result.records,
-      price: result.price
-    };
+    try {
+      // Tenta fazer a requisição para a API externa
+      // Em produção, esta requisição deve ser processada corretamente
+      const response = await fetch(apiUrl).catch(() => {
+        throw new Error('Erro ao conectar com API externa');
+      });
+      
+      // Analisa a resposta
+      if (response.ok) {
+        const text = await response.text();
+        
+        // Verifica se o domínio está disponível com base no conteúdo da página
+        // Esta lógica depende do formato da resposta da API
+        const available = !text.includes('Domain is already registered') && 
+                          !text.includes('DNS records found');
+        
+        return {
+          domain,
+          available,
+          records: available ? [] : [
+            { type: 'A', value: '198.51.100.123' },
+            { type: 'NS', value: 'ns1.example.com' },
+          ]
+        };
+      } else {
+        throw new Error(`API retornou status ${response.status}`);
+      }
+    } catch (error) {
+      console.warn('Erro ao acessar API externa, usando simulação local', error);
+      
+      // Simulação para desenvolvimento quando a API externa não está disponível
+      const isCommonTld = domain.endsWith('.com') || domain.endsWith('.org') || domain.endsWith('.net');
+      const isShortName = domain.split('.')[0].length <= 5;
+      const available = !(isCommonTld && isShortName) && Math.random() > 0.3;
+      
+      return {
+        domain,
+        available,
+        records: available ? [] : [
+          { type: 'A', value: '198.51.100.123' },
+          { type: 'NS', value: 'ns1.example.com' },
+        ]
+      };
+    }
   } catch (error) {
     console.error('Erro na verificação de domínio:', error);
     // Fornecer um resultado padrão em caso de erro

@@ -1,31 +1,29 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { formatPrice } from '@/utils/formatters';
 import { motion } from 'framer-motion';
-import { ShoppingCart, Check, Package, Shield, Clock } from 'lucide-react';
+import { ShoppingCart, Check, Shield, Clock, Trash } from 'lucide-react';
+import { Button } from "@/components/ui/button";
+import { useCart } from '@/contexts/CartContext';
 
 interface OrderSummaryProps {
   items: any[];
   subtotal: number;
   discount: number;
   total: number;
-  billingCycle: string;
-  handleBillingCycleChange: (cycle: string) => void;
 }
 
 const OrderSummary = ({
   items,
   subtotal,
   discount,
-  total,
-  billingCycle,
-  handleBillingCycleChange
+  total
 }: OrderSummaryProps) => {
+  const { removeFromCart, clearCart } = useCart();
+
   return (
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
@@ -43,24 +41,6 @@ const OrderSummary = ({
           </Badge>
         </CardHeader>
         <CardContent className="space-y-6 pt-6">
-          {/* Billing Cycle Selection - Now more prominent */}
-          <div className="rounded-lg border p-4 bg-muted/30">
-            <h3 className="font-medium mb-2 flex items-center gap-2">
-              <Package className="h-4 w-4" />
-              Ciclo de Cobrança
-            </h3>
-            <RadioGroup 
-              value={billingCycle} 
-              onValueChange={handleBillingCycleChange}
-              className="flex space-x-4"
-            >
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="annual" id="annual" />
-                <Label htmlFor="annual" className="cursor-pointer">Anual</Label>
-              </div>
-            </RadioGroup>
-          </div>
-          
           {items.length > 0 ? (
             <div className="space-y-4">
               <div className="space-y-3">
@@ -72,7 +52,7 @@ const OrderSummary = ({
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3 }}
                   >
-                    <div className="flex justify-between">
+                    <div className="flex justify-between items-start">
                       <div className="text-sm">
                         <p className="font-medium">{item.title}</p>
                         {item.domain && (
@@ -92,7 +72,14 @@ const OrderSummary = ({
                           </span>
                         )}
                       </div>
-                      <span className="font-medium">{formatPrice(item.price * item.quantity)}</span>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-6 w-6 text-destructive" 
+                        onClick={() => removeFromCart(item.id)}
+                      >
+                        <Trash className="h-4 w-4" />
+                      </Button>
                     </div>
                   </motion.div>
                 ))}
@@ -117,6 +104,18 @@ const OrderSummary = ({
                   <span>Total</span>
                   <span className="text-primary text-lg">{formatPrice(total)}</span>
                 </div>
+              </div>
+
+              <div className="flex justify-between">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => clearCart()}
+                  className="text-destructive border-destructive/30 hover:bg-destructive/10"
+                >
+                  <Trash className="h-4 w-4 mr-2" />
+                  Limpar carrinho
+                </Button>
               </div>
               
               <div className="rounded-md bg-muted/20 p-3 flex items-start gap-2 text-sm">

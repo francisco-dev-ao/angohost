@@ -13,7 +13,6 @@ export const useCheckoutProcess = () => {
   const [loading, setLoading] = useState(false);
   const [orderPlaced, setOrderPlaced] = useState(false);
   const [authVisible, setAuthVisible] = useState(false);
-  const [selectedBillingPeriod, setSelectedBillingPeriod] = useState('1');
 
   // Calculated values for OrderSummary
   const subtotal = total;
@@ -24,11 +23,6 @@ export const useCheckoutProcess = () => {
       navigate('/');
     }
   }, [items, navigate, orderPlaced]);
-
-  const handleBillingPeriodChange = (period: string) => {
-    setSelectedBillingPeriod(period);
-    // Additional logic for billing period change if needed
-  };
 
   const handleAuthComplete = () => {
     setAuthVisible(false);
@@ -50,9 +44,9 @@ export const useCheckoutProcess = () => {
       const { success, data, error } = await executeQuery(
         `INSERT INTO orders (
           order_number, user_id, items, total_amount, status, 
-          payment_method, contact_profile_id, client_details
+          payment_method, client_details
         ) 
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
+        VALUES ($1, $2, $3, $4, $5, $6, $7) 
         RETURNING id`,
         [
           orderNumber,
@@ -61,7 +55,6 @@ export const useCheckoutProcess = () => {
           total,
           'pending',
           formData.paymentMethod,
-          formData.contactProfileId,
           JSON.stringify({
             name: formData.name,
             email: formData.email,
@@ -99,8 +92,6 @@ export const useCheckoutProcess = () => {
     loading,
     orderPlaced,
     authVisible,
-    selectedBillingPeriod,
-    handleBillingPeriodChange,
     handleAuthComplete,
     handleSubmitOrder
   };

@@ -1,68 +1,99 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { castInvoiceData } from '@/utils/adminMappers';
+import { toast } from 'sonner';
 import { Invoice } from '@/hooks/useInvoices';
 
 export const useAdminInvoices = () => {
-  const fetchRecentInvoices = async (): Promise<Invoice[]> => {
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchInvoices = async () => {
     try {
-      const { data: invoicesData, error: invoicesError } = await supabase
+      setIsLoading(true);
+      const { data, error } = await supabase
         .from('invoices')
         .select('*')
-        .order('created_at', { ascending: false })
-        .limit(5);
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
       
-      if (invoicesError) throw invoicesError;
+      // Ensure proper type casting to maintain status type
+      const typedInvoices = (data || []).map(invoice => ({
+        ...invoice,
+        status: invoice.status as 'pending' | 'paid' | 'cancelled' | 'overdue'
+      }));
       
-      return castInvoiceData(invoicesData || []);
-    } catch (error) {
-      console.error('Error fetching recent invoices:', error);
-      return [];
-    }
-  };
-  
-  const fetchInvoiceCounts = async () => {
-    try {
-      const { count: pendingInvoices, error: pendingInvoicesError } = await supabase
-        .from('invoices')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'pending');
-      
-      if (pendingInvoicesError) throw pendingInvoicesError;
-      
-      const { count: paidInvoices, error: paidInvoicesError } = await supabase
-        .from('invoices')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'paid');
-      
-      if (paidInvoicesError) throw paidInvoicesError;
-      
-      return {
-        pendingInvoices: pendingInvoices || 0,
-        paidInvoices: paidInvoices || 0
-      };
-    } catch (error) {
-      console.error('Error fetching invoice counts:', error);
-      return { pendingInvoices: 0, paidInvoices: 0 };
-    }
-  };
-  
-  const fetchTotalRevenue = async (): Promise<number> => {
-    try {
-      const { data: revenueData, error: revenueError } = await supabase
-        .from('invoices')
-        .select('amount')
-        .eq('status', 'paid');
-      
-      if (revenueError) throw revenueError;
-      
-      return revenueData?.reduce((acc, invoice) => acc + Number(invoice.amount), 0) || 0;
-    } catch (error) {
-      console.error('Error fetching total revenue:', error);
-      return 0;
+      setInvoices(typedInvoices);
+    } catch (error: any) {
+      toast.error('Erro ao carregar faturas: ' + error.message);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  return { fetchRecentInvoices, fetchInvoiceCounts, fetchTotalRevenue };
+  const downloadInvoice = async (invoiceId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('invoices')
+        .select('invoice_number, download_url')
+        .eq('id', invoiceId)
+        .single();
+
+      if (error) throw error;
+      
+      if (data.download_url) {
+        // Se já temos uma URL de download, usá-la
+        window.open(data.download_url, '_blank');
+      } else {
+        // Criar PDF e obter URL
+        toast.info('Gerando PDF da fatura...');
+        
+        // Simulação de geração de PDF
+        setTimeout(() => {
+          toast.success('Fatura pronta para download');
+          
+          // Em um ambiente real, isso seria substituído pela URL real do PDF
+          const mockPdfUrl = `${window.location.origin}/invoices/download/${invoiceId}`;
+          window.open(mockPdfUrl, '_blank');
+          
+          // Atualizar o registro da fatura com a URL de download
+          supabase
+            .from('invoices')
+            .update({ download_url: mockPdfUrl })
+            .eq('id', invoiceId);
+        }, 2000);
+      }
+    } catch (error: any) {
+      toast.error('Erro ao baixar fatura: ' + error.message);
+    }
+  };
+  
+  const deleteInvoice = async (invoiceId: string) => {
+    try {
+      const { error } = await supabase
+        .from('invoices')
+        .delete()
+        .eq('id', invoiceId);
+        
+      if (error) throw error;
+      
+      toast.success('Fatura excluída com sucesso');
+      fetchInvoices();
+    } catch (error: any) {
+      toast.error('Erro ao excluir fatura: ' + error.message);
+    }
+  };
+
+  useEffect(() => {
+    fetchInvoices();
+  }, []);
+
+  return {
+    invoices,
+    isLoading,
+    fetchInvoices,
+    downloadInvoice,
+    deleteInvoice
+  };
 };

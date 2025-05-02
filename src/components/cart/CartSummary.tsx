@@ -2,29 +2,23 @@
 import { useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { formatPrice } from "@/utils/formatters";
-import { AlertCircle, Info, ShoppingCart, Clock, Check } from "lucide-react";
+import { AlertCircle, Info, ShoppingCart, Clock, Check, Trash } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 
 interface CartSummaryProps {
   subtotal: number;
   hasUnownedDomains: boolean;
-  hasDomains: boolean; 
-  selectedBillingPeriod: string;
-  onBillingPeriodChange: (period: string) => void;
-  onRecalculatePrices: (period: string) => void;
+  hasDomains: boolean;
+  onClearCart: () => void;
 }
 
 const CartSummary = ({ 
   subtotal, 
   hasUnownedDomains,
   hasDomains,
-  selectedBillingPeriod,
-  onBillingPeriodChange,
-  onRecalculatePrices,
+  onClearCart
 }: CartSummaryProps) => {
   const navigate = useNavigate();
   const [discount, setDiscount] = useState(0);
@@ -41,12 +35,6 @@ const CartSummary = ({
     setDiscount(discountValue);
     setTotal(subtotal - (subtotal * discountValue));
   }, [subtotal]);
-
-  const handlePeriodChange = (period: string) => {
-    onBillingPeriodChange(period);
-    // Recalcular preços quando o período muda
-    onRecalculatePrices(period);
-  };
 
   return (
     <motion.div
@@ -65,46 +53,6 @@ const CartSummary = ({
       
       {/* Content */}
       <div className="p-6 space-y-6">
-        {/* Billing cycle selection */}
-        <div className="rounded-lg border p-4 bg-muted/20">
-          <h3 className="font-medium mb-3 flex items-center gap-2">
-            <Clock className="h-4 w-4" />
-            Ciclo de Cobrança
-          </h3>
-          
-          <RadioGroup 
-            value={selectedBillingPeriod} 
-            onValueChange={handlePeriodChange}
-            className="grid grid-cols-5 gap-2"
-          >
-            {["1", "2", "3", "4", "5"].map((period) => (
-              <div key={period} className="relative">
-                <RadioGroupItem
-                  value={period}
-                  id={`period-${period}`}
-                  className="sr-only"
-                />
-                <Label
-                  htmlFor={`period-${period}`}
-                  className={`flex flex-col items-center justify-center border rounded-md p-2 cursor-pointer transition-all ${
-                    selectedBillingPeriod === period
-                      ? "bg-primary text-primary-foreground border-primary"
-                      : "hover:bg-muted/50"
-                  }`}
-                >
-                  <span className="text-sm font-medium">{period}</span>
-                  <span className="text-xs">{period === "1" ? "ano" : "anos"}</span>
-                  {period !== "1" && (
-                    <span className="text-xs mt-1 bg-primary-foreground/20 px-1 rounded">
-                      -{(parseInt(period) - 1) * 5}%
-                    </span>
-                  )}
-                </Label>
-              </div>
-            ))}
-          </RadioGroup>
-        </div>
-
         <Separator />
 
         <div className="space-y-2">
@@ -124,14 +72,27 @@ const CartSummary = ({
           </div>
         </div>
 
-        <Button 
-          className="w-full mt-2 gap-2" 
-          onClick={() => navigate('/enhanced-checkout')}
-          disabled={hasUnownedDomains || !hasDomains}
-        >
-          <ShoppingCart className="h-4 w-4" />
-          Finalizar Compra
-        </Button>
+        <div className="flex flex-col gap-3">
+          <Button 
+            className="w-full gap-2" 
+            onClick={() => navigate('/enhanced-checkout')}
+            disabled={hasUnownedDomains || !hasDomains}
+          >
+            <ShoppingCart className="h-4 w-4" />
+            Finalizar Compra
+          </Button>
+          
+          {hasDomains && (
+            <Button 
+              variant="outline" 
+              className="w-full gap-2 text-destructive border-destructive/30 hover:bg-destructive/10" 
+              onClick={onClearCart}
+            >
+              <Trash className="h-4 w-4" />
+              Limpar Carrinho
+            </Button>
+          )}
+        </div>
         
         {!hasDomains && (
           <div className="text-sm text-amber-500 mt-2 flex items-center gap-2 p-3 bg-amber-50 rounded-md">

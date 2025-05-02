@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { toast } from 'sonner';
-import { invoicePdfConfig } from '@/utils/database';
 
 export interface Invoice {
   id: string;
@@ -18,6 +17,8 @@ export interface Invoice {
   updated_at?: string;
   order_id: string;
   download_url?: string;
+  client_details?: any;
+  company_details?: any;
 }
 
 export const useInvoices = () => {
@@ -38,7 +39,13 @@ export const useInvoices = () => {
 
       if (error) throw error;
       
-      setInvoices(data || []);
+      // Ensure proper type casting to maintain status type
+      const typedInvoices = (data || []).map(invoice => ({
+        ...invoice,
+        status: invoice.status as 'pending' | 'paid' | 'cancelled' | 'overdue'
+      }));
+      
+      setInvoices(typedInvoices);
     } catch (error: any) {
       toast.error('Erro ao carregar faturas: ' + error.message);
     } finally {

@@ -1,8 +1,8 @@
 
 import React from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 interface ClientInfoSectionProps {
   formData: {
@@ -12,74 +12,42 @@ interface ClientInfoSectionProps {
     address: string;
   };
   profileLoaded: boolean;
-  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
-const ClientInfoSection = ({ formData, profileLoaded, onChange }: ClientInfoSectionProps) => {
+const ClientInfoSection = ({ formData, profileLoaded }: ClientInfoSectionProps) => {
   return (
     <Card>
       <CardHeader>
         <CardTitle>Informações Pessoais</CardTitle>
-        <CardDescription>Atualize seus dados pessoais e informações de contato</CardDescription>
+        <CardDescription>Atualize seus dados pessoais e informações de contato.</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="grid gap-4 md:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="name">Nome completo</Label>
-            <Input
-              id="name"
-              name="name"
-              value={formData.name}
-              onChange={onChange}
-              disabled={true}
-              className="bg-muted"
-            />
+        {profileLoaded ? (
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Nome completo</Label>
+                <Input id="name" defaultValue={formData.name} readOnly />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input id="email" type="email" defaultValue={formData.email} readOnly />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="phone">Telefone</Label>
+                <Input id="phone" defaultValue={formData.phone} readOnly />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="address">Endereço</Label>
+                <Input id="address" defaultValue={formData.address} readOnly />
+              </div>
+            </div>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              name="email"
-              type="email"
-              value={formData.email}
-              onChange={onChange}
-              disabled={true}
-              className="bg-muted"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="phone">Telefone</Label>
-            <Input
-              id="phone"
-              name="phone"
-              value={formData.phone}
-              onChange={onChange}
-              disabled={profileLoaded}
-              className={profileLoaded ? "bg-muted" : ""}
-            />
-            {profileLoaded && formData.phone && (
-              <p className="text-xs text-muted-foreground">
-                Para alterar, contate o suporte
-              </p>
-            )}
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="address">Endereço</Label>
-            <Input
-              id="address"
-              name="address"
-              value={formData.address}
-              onChange={onChange}
-              disabled={profileLoaded}
-              className={profileLoaded ? "bg-muted" : ""}
-            />
-            {profileLoaded && formData.address && (
-              <p className="text-xs text-muted-foreground">
-                Para alterar, contate o suporte
-              </p>
-            )}
-          </div>
-        </div>
+        ) : (
+          <div className="text-center py-4">Carregando informações do usuário...</div>
+        )}
       </CardContent>
     </Card>
   );

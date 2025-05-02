@@ -3,65 +3,42 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { toast } from 'sonner';
-
-export interface Order {
-  id: string;
-  order_number: string;
-  status: string;
-  total_amount: number;
-  created_at: string;
-  payment_status: string;
-  items: any;
-}
+import { Order } from '@/types/client';
 
 export const useOrders = () => {
   const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const { user } = useSupabaseAuth();
 
-  useEffect(() => {
+  const fetchOrders = async () => {
     if (!user) return;
+    
+    try {
+      setIsLoading(true);
+      const { data, error } = await supabase
+        .from('orders')
+        .select('*, invoices:invoices(id, invoice_number)')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+        
+      if (error) throw error;
+      
+      setOrders(data || []);
+    } catch (error: any) {
+      toast.error('Erro ao carregar pedidos: ' + error.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-    const fetchOrders = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('orders')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
-
-        if (error) throw error;
-        setOrders(data || []);
-      } catch (error: any) {
-        toast.error('Erro ao carregar pedidos: ' + error.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchOrders();
-
-    // Set up real-time subscription
-    const ordersChannel = supabase
-      .channel('orders-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'orders',
-          filter: `user_id=eq.${user.id}`
-        },
-        () => {
-          fetchOrders();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(ordersChannel);
-    };
+  useEffect(() => {
+    if (user) {
+      fetchOrders();
+    } else {
+      setOrders([]);
+      setIsLoading(false);
+    }
   }, [user]);
 
-  return { orders, loading };
+  return { orders, isLoading, fetchOrders };
 };
