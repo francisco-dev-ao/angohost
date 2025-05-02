@@ -1,134 +1,156 @@
 
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
-import { executeQuery } from '@/utils/database';
+import { supabase } from '@/integrations/supabase/client';
 
 export const useSupabaseAuth = () => {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Verificar se há um usuário autenticado no localStorage
-    const storedUser = localStorage.getItem('auth_user');
-    if (storedUser) {
+    // Verificar autenticação atual ao carregar
+    const checkCurrentUser = async () => {
       try {
-        setUser(JSON.parse(storedUser));
-      } catch (e) {
+        setLoading(true);
+        const { data: { user }, error } = await supabase.auth.getUser();
+        
+        if (error) {
+          console.error('Erro ao verificar usuário:', error);
+          throw error;
+        }
+        
+        setUser(user);
+      } catch (error) {
+        console.error('Erro na verificação de autenticação:', error);
+        // Não exibir toast aqui para não interromper a experiência do usuário
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkCurrentUser();
+
+    // Configurar listener para mudanças na autenticação
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('Evento de autenticação:', event);
+      setUser(session?.user || null);
+      
+      // Atualizar localStorage para compatibilidade com o código existente
+      if (session?.user) {
+        localStorage.setItem('auth_user', JSON.stringify(session.user));
+      } else if (event === 'SIGNED_OUT') {
         localStorage.removeItem('auth_user');
       }
-    }
-    setLoading(false);
+    });
+
+    return () => {
+      authListener?.subscription.unsubscribe();
+    };
   }, []);
 
   const handleSignIn = async (email: string, password: string) => {
     try {
-      console.log('Executando login para:', email);
+      setLoading(true);
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
       
-      // Verificar credenciais no banco de dados
-      const { success, data, error } = await executeQuery(
-        'SELECT * FROM profiles WHERE email = $1 LIMIT 1',
-        [email]
-      );
+      if (error) throw error;
       
-      console.log('Resultado da consulta de login:', { success, data, error });
-
-      if (!success) {
-        throw new Error(error || 'Erro ao verificar usuário');
-      }
-      
-      if (!data || data.length === 0) {
-        throw new Error('Usuário não encontrado');
-      }
-
-      // Simulação de verificação de credenciais para este exemplo
-      // Em produção, deve-se implementar verificação de hash de senha
-      const user = data[0];
-      const passwordValid = true; // Simplificado para demonstração
-      
-      if (!passwordValid) {
-        throw new Error('Senha incorreta');
-      }
-
-      // Armazenar usuário autenticado
-      localStorage.setItem('auth_user', JSON.stringify(user));
-      setUser(user);
-
+      setUser(data.user);
       toast.success('Login realizado com sucesso!');
-      return user;
+      return data.user;
     } catch (error: any) {
       console.error('Erro no login:', error);
       toast.error(error.message || 'Erro ao realizar login');
       throw error;
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleSignUp = async (email: string, password: string, fullName: string) => {
     try {
-      // Verificar se o usuário já existe
-      const checkUser = await executeQuery(
-        'SELECT * FROM profiles WHERE email = $1 LIMIT 1',
-        [email]
-      );
-
-      if (checkUser.success && checkUser.data && checkUser.data.length > 0) {
-        throw new Error('Usuário já existe');
+      setLoading(true);
+      
+      // Registrar usuário com Supabase Auth
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: fullName
+          }
+        }
+      });
+      
+      if (error) throw error;
+      
+      // Após o registro, atualizar o perfil na tabela profiles
+      if (data.user) {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .upsert({ 
+            id: data.user.id, 
+            email: email,
+            full_name: fullName,
+            role: 'customer',
+            is_active: true
+          });
+          
+        if (profileError) {
+          console.error('Erro ao criar perfil:', profileError);
+          // Continuamos mesmo se houver erro no perfil, pois a conta foi criada
+        }
       }
-
-      // Criar novo usuário
-      // Em um sistema real, você deve hash a senha antes de armazenar
-      const { success, data, error } = await executeQuery(
-        'INSERT INTO profiles (email, full_name, role, is_active) VALUES ($1, $2, $3, $4) RETURNING *',
-        [email, fullName, 'customer', true]
-      );
-
-      if (!success || !data) {
-        throw new Error(error || 'Erro ao criar usuário');
-      }
-
-      // Armazenar usuário autenticado
-      const newUser = data[0];
-      localStorage.setItem('auth_user', JSON.stringify(newUser));
-      setUser(newUser);
-
+      
+      setUser(data.user);
       toast.success('Cadastro realizado com sucesso!');
-      return newUser;
+      return data.user;
     } catch (error: any) {
+      console.error('Erro no cadastro:', error);
       toast.error(error.message || 'Erro ao realizar cadastro');
       throw error;
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleResetPassword = async (email: string) => {
     try {
-      const { success, data } = await executeQuery(
-        'SELECT * FROM profiles WHERE email = $1 LIMIT 1',
-        [email]
-      );
+      setLoading(true);
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.origin + '/reset-password'
+      });
       
-      if (!success || !data || data.length === 0) {
-        throw new Error('E-mail não encontrado');
-      }
-      
-      // Aqui você implementaria a lógica real de redefinição de senha
-      // Por exemplo, enviar um e-mail com um link ou token de redefinição
+      if (error) throw error;
       
       toast.success('Instruções enviadas para o seu e-mail');
       return true;
     } catch (error: any) {
       toast.error(error.message || 'Erro ao solicitar redefinição de senha');
       throw error;
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleSignOut = async () => {
     try {
-      localStorage.removeItem('auth_user');
-      setUser(null);
+      setLoading(true);
+      const { error } = await supabase.auth.signOut();
       
+      if (error) throw error;
+      
+      setUser(null);
+      localStorage.removeItem('auth_user');
       toast.success('Sessão encerrada com sucesso');
     } catch (error: any) {
       toast.error(error.message || 'Erro ao encerrar sessão');
       throw error;
+    } finally {
+      setLoading(false);
     }
   };
 
