@@ -44,7 +44,7 @@ export const useSaveOrder = () => {
           order_number: orderNumber,
           user_id: user.id,
           total_amount: totalAmount,
-          items: items, // Já está no formato correto para JSONB
+          items: JSON.stringify(items), // Convert to JSON string for JSONB compatibility
           status: 'pending',
           payment_method: options.paymentMethodId,
           payment_status: options.skipPayment ? 'pending_invoice' : 'pending',
@@ -148,7 +148,7 @@ export const useSaveOrder = () => {
       const serviceType = mapToValidServiceType(item);
       const serviceDescription = item.description || '';
       
-      // Preparar payload do serviço
+      // Prepare service data with valid service_type
       const serviceData = {
         user_id: userId,
         service_type: serviceType,
@@ -157,7 +157,8 @@ export const useSaveOrder = () => {
         renewal_date: renewalDate.toISOString(),
         price_monthly: item.price / 12, // Estimate monthly price
         price_yearly: item.price,
-        name: item.name || item.title || 'Serviço'
+        name: item.name || item.title || 'Serviço',
+        auto_renew: true // Adding required fields
       };
       
       await supabase.from('client_services').insert(serviceData);
@@ -166,8 +167,8 @@ export const useSaveOrder = () => {
     }
   };
 
-  // Map service type to valid enum values
-  const mapToValidServiceType = (item: CartItem): 'email' | 'cpanel_hosting' | 'wordpress_hosting' | 'vps' | 'dedicated_server' | 'exchange' | 'other' => {
+  // Map service type to valid enum values - ensuring we never return "other"
+  const mapToValidServiceType = (item: CartItem): 'email' | 'cpanel_hosting' | 'wordpress_hosting' | 'vps' | 'dedicated_server' | 'exchange' => {
     const name = (item.name || item.title || '').toLowerCase();
     
     if (name.includes('email')) {
@@ -183,7 +184,7 @@ export const useSaveOrder = () => {
     } else if (name.includes('exchange')) {
       return 'exchange';
     } else {
-      return 'other';
+      return 'cpanel_hosting'; // Default to cpanel_hosting instead of 'other'
     }
   };
 
