@@ -5,6 +5,12 @@ import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { Domain, Service } from '@/types/client';
 import { toast } from 'sonner';
 
+// Define a type for the admin settings
+type AdminSettings = {
+  currencyFormat: string;
+  [key: string]: any;
+};
+
 export const useRealtimeClientDashboard = () => {
   const { user } = useSupabaseAuth();
   const [services, setServices] = useState<Service[]>([]);
@@ -35,8 +41,12 @@ export const useRealtimeClientDashboard = () => {
         .eq('id', 'general_settings')
         .single();
       
-      if (!error && data && data.settings && data.settings.currencyFormat) {
-        setCurrencyFormat(data.settings.currencyFormat);
+      if (!error && data && data.settings) {
+        // Make sure data.settings is an object and has currencyFormat property
+        const settings = data.settings as AdminSettings;
+        if (settings && settings.currencyFormat) {
+          setCurrencyFormat(settings.currencyFormat);
+        }
       }
     } catch (error) {
       console.error('Error fetching currency format:', error);
