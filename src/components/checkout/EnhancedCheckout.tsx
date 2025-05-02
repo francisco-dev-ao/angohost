@@ -40,7 +40,7 @@ const EnhancedCheckout = () => {
         <h1 className="text-3xl font-bold mb-4">Seu carrinho está vazio</h1>
         <p className="text-muted-foreground mb-8">Não há itens no seu carrinho para finalizar a compra.</p>
         <div className="space-y-4">
-          <Button onClick={() => navigate('/domains')} className="px-8">
+          <Button onClick={() => navigate('/domains')} className="px-8 bg-[#673de6] hover:bg-[#5025d1]">
             Pesquisar domínios
           </Button>
           <div>

@@ -63,7 +63,7 @@ export default {
 					ring: 'hsl(var(--sidebar-ring))'
 				},
 				angohost: {
-					primary: '#1a365d', // Deep blue
+					primary: '#673de6', // Hostinger purple
 					secondary: '#3182ce', // Blue
 					accent: '#f6ad55', // Orange accent
 					light: '#ebf8ff', // Light blue background
@@ -98,12 +98,17 @@ export default {
 				'float': {
 					'0%, 100%': { transform: 'translateY(0)' },
 					'50%': { transform: 'translateY(-10px)' },
-				}
+				},
+                'fadeIn': {
+                    '0%': { opacity: '0', transform: 'translateY(-10px)' },
+                    '100%': { opacity: '1', transform: 'translateY(0)' }
+                }
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
 				'accordion-up': 'accordion-up 0.2s ease-out',
 				'float': 'float 6s ease-in-out infinite',
+                'fadeIn': 'fadeIn 0.5s ease-out forwards'
 			}
 		}
 	},

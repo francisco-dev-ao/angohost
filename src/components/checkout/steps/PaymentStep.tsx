@@ -44,11 +44,11 @@ const PaymentStep = ({
           <div 
             key={method.id} 
             className={`flex items-center justify-between border rounded-md p-4 ${
-              paymentMethod === method.id ? 'border-primary' : 'border-gray-200'
+              paymentMethod === method.id ? 'border-[#673de6]' : 'border-gray-200'
             }`}
           >
             <div className="flex items-center space-x-3">
-              <RadioGroupItem value={method.id} id={`payment-${method.id}`} />
+              <RadioGroupItem value={method.id} id={`payment-${method.id}`} className="text-[#673de6]" />
               <Label htmlFor={`payment-${method.id}`} className="flex items-center space-x-2">
                 {method.payment_type === 'bank_transfer' ? (
                   <Banknote className="h-4 w-4" />
@@ -78,6 +78,7 @@ const PaymentStep = ({
         <Button 
           type="submit" 
           disabled={isSaving || !paymentMethod}
+          className="bg-[#673de6] hover:bg-[#5025d1]"
         >
           {isSaving ? 'Processando...' : 'Finalizar Compra'}
           <CheckCircle className="ml-2 h-4 w-4" />

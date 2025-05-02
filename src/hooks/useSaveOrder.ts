@@ -64,7 +64,7 @@ export const useSaveOrder = () => {
       
       // Format items to ensure they're a valid JSON array and not a string
       const formattedItems = items.map(item => ({
-        name: item.title || item.name,
+        name: item.title || item.name || "Produto",
         quantity: item.quantity,
         price: item.price,
         type: item.type || 'product',

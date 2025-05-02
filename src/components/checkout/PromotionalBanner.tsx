@@ -8,19 +8,21 @@ interface PromotionalBannerProps {
 }
 
 const PromotionalBanner = ({ 
-  message = "Oferta especial: preços promocionais por tempo limitado!",
+  message = "Economize até 75% na Hospedagem Web | Oferta por tempo limitado!",
   className = "",
   isSticky = false
 }: PromotionalBannerProps) => {
   return (
     <div 
       className={`
-        bg-primary/90 text-white p-4 text-center
-        ${isSticky ? 'sticky z-20 top-0 animate-fadeIn' : 'rounded-lg'}
+        bg-[#673de6] text-white text-center
+        ${isSticky ? 'sticky z-30 top-0 animate-fadeIn' : 'rounded-lg my-4'}
         ${className}
       `}
     >
-      <p className="text-lg md:text-xl font-medium">{message}</p>
+      <div className="container mx-auto px-4">
+        <p className="text-sm md:text-base font-medium py-2">{message}</p>
+      </div>
     </div>
   );
 };

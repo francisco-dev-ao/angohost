@@ -1,3 +1,4 @@
+
 /**
  * Database utility functions for browser environment
  * Uses fetch API to call server endpoints instead of direct pg connection
@@ -110,7 +111,7 @@ export const testDatabaseConnection = async (): Promise<QueryResult> => {
       console.warn('Usando resposta simulada para desenvolvimento devido a falha na conexão');
       return { 
         success: true, 
-        data: { connected: 1 },
+        data: [{ connected: 1 }],
         message: "Conexão com o banco de dados simulada (fallback)" 
       };
     }
