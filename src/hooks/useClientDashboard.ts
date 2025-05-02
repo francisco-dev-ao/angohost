@@ -1,111 +1,108 @@
 
-import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
-import { toast } from 'sonner';
+import { useState, useEffect } from "react";
+import { useSupabaseAuth } from "@/hooks/useSupabaseAuth";
+import { executeQuery } from "@/utils/database";
 
-interface DashboardStats {
-  domains: number;
+export interface DashboardStats {
   activeServices: number;
+  activeDomains: number;
   pendingInvoices: number;
-  openTickets: number;
-  notifications: number;
-  services: any[];
-  domains_list: any[];
-  invoices: any[];
-  loading: boolean;
+  totalSpent: number | string;
 }
 
 export const useClientDashboard = () => {
   const { user } = useSupabaseAuth();
   const [stats, setStats] = useState<DashboardStats>({
-    domains: 0,
     activeServices: 0,
+    activeDomains: 0,
     pendingInvoices: 0,
-    openTickets: 0,
-    notifications: 0,
-    services: [],
-    domains_list: [],
-    invoices: [],
-    loading: true,
+    totalSpent: 0,
   });
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!user) return;
-
     const fetchDashboardData = async () => {
+      if (!user) {
+        setIsLoading(false);
+        return;
+      }
+
       try {
-        // Fetch domains
-        const { data: domains, error: domainsError } = await supabase
-          .from('client_domains')
-          .select('*')
-          .eq('user_id', user.id)
-          .limit(3)
-          .order('created_at', { ascending: false });
-          
-        if (domainsError) throw domainsError;
+        setIsLoading(true);
+        setError(null);
+
+        // For mock data in development or preview environments, return fake stats
+        if (import.meta.env.DEV || window.location.hostname.includes('lovable.app')) {
+          setTimeout(() => {
+            setStats({
+              activeServices: 3,
+              activeDomains: 2,
+              pendingInvoices: 1,
+              totalSpent: "75.000",
+            });
+            setIsLoading(false);
+          }, 800);
+          return;
+        }
+
+        // Get active services count
+        const servicesResult = await executeQuery(
+          "SELECT COUNT(*) FROM client_services WHERE user_id = $1 AND status = 'active'",
+          [user.id]
+        );
+
+        // Get active domains count
+        const domainsResult = await executeQuery(
+          "SELECT COUNT(*) FROM client_domains WHERE user_id = $1 AND status = 'active'",
+          [user.id]
+        );
+
+        // Get pending invoices count
+        const invoicesResult = await executeQuery(
+          "SELECT COUNT(*) FROM invoices WHERE user_id = $1 AND status = 'pending'",
+          [user.id]
+        );
+
+        // Get total spent
+        const spentResult = await executeQuery(
+          "SELECT SUM(amount) FROM invoices WHERE user_id = $1 AND status = 'paid'",
+          [user.id]
+        );
+
+        if (
+          servicesResult.success &&
+          domainsResult.success &&
+          invoicesResult.success &&
+          spentResult.success
+        ) {
+          setStats({
+            activeServices: parseInt(servicesResult.data?.[0]?.count || '0'),
+            activeDomains: parseInt(domainsResult.data?.[0]?.count || '0'),
+            pendingInvoices: parseInt(invoicesResult.data?.[0]?.count || '0'),
+            totalSpent: parseInt(spentResult.data?.[0]?.sum || '0').toLocaleString('pt-AO'),
+          });
+        } else {
+          throw new Error("Falha ao buscar dados do dashboard");
+        }
+      } catch (err: any) {
+        console.error("Erro ao buscar dados do dashboard:", err);
+        setError(err.message || "Erro desconhecido");
         
-        // Fetch services
-        const { data: services, error: servicesError } = await supabase
-          .from('client_services')
-          .select('*')
-          .eq('user_id', user.id)
-          .eq('status', 'active')
-          .limit(2)
-          .order('created_at', { ascending: false });
-          
-        if (servicesError) throw servicesError;
-        
-        // Fetch invoices
-        const { data: invoices, error: invoicesError } = await supabase
-          .from('invoices')
-          .select('*')
-          .eq('user_id', user.id)
-          .eq('status', 'pending')
-          .limit(1)
-          .order('created_at', { ascending: false });
-          
-        if (invoicesError) throw invoicesError;
-        
-        // Count open tickets - Corrigido para usar { count: 'exact' }
-        const { count: ticketsCount, error: ticketsError } = await supabase
-          .from('client_tickets')
-          .select('*', { count: 'exact', head: true })
-          .eq('user_id', user.id)
-          .eq('status', 'open');
-          
-        if (ticketsError) throw ticketsError;
-        
-        // Count unread notifications - Corrigido para usar { count: 'exact' }
-        const { count: notificationsCount, error: notificationsError } = await supabase
-          .from('user_notifications')
-          .select('*', { count: 'exact', head: true })
-          .eq('user_id', user.id)
-          .eq('read', false);
-          
-        if (notificationsError) throw notificationsError;
-        
-        // Update stats state with all the fetched data
+        // Set fallback data in case of error
         setStats({
-          domains: domains?.length || 0,
-          activeServices: services?.length || 0,
-          pendingInvoices: invoices?.length || 0,
-          openTickets: ticketsCount || 0,
-          notifications: notificationsCount || 0,
-          services: services || [],
-          domains_list: domains || [],
-          invoices: invoices || [],
-          loading: false,
+          activeServices: 0,
+          activeDomains: 0,
+          pendingInvoices: 0,
+          totalSpent: "0",
         });
-      } catch (error) {
-        console.error('Error fetching dashboard data:', error);
-        toast.error('Erro ao carregar dados do dashboard');
-        setStats(prev => ({ ...prev, loading: false }));
+      } finally {
+        setIsLoading(false);
       }
     };
 
     fetchDashboardData();
   }, [user]);
 
-  return stats;
+  return { stats, isLoading, error };
 };
