@@ -6,7 +6,7 @@ import { formatPrice } from "@/utils/formatters";
 import { Lock, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { Separator } from "@/components/ui/separator";
-import { CartItem } from "@/types/cart";
+import { useCart } from "@/contexts/CartContext";
 
 interface OrderSummaryProps {
   currentStep: number;

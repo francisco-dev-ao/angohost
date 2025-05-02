@@ -54,15 +54,21 @@ export const useSaveOrder = () => {
 
       // Process items based on their type
       for (const item of items) {
+        // Ensure item has a name (use title if name is not available)
+        const itemWithName = {
+          ...item,
+          name: item.name || item.title || 'Item sem nome'
+        };
+        
         // Determine item type
-        const itemType = determineItemType(item);
+        const itemType = determineItemType(itemWithName);
         
         if (itemType === 'domain') {
           // Create domain record
-          await processDomain(item, user.id);
+          await processDomain(itemWithName, user.id);
         } else if (itemType === 'service') {
           // Create service record
-          await processService(item, user.id);
+          await processService(itemWithName, user.id);
         }
       }
 
@@ -136,7 +142,7 @@ export const useSaveOrder = () => {
       renewalDate.setFullYear(renewalDate.getFullYear() + 1); // Default 1 year subscription
       
       // Map service type to known service types
-      let serviceType = mapToValidServiceType(item);
+      const serviceType = mapToValidServiceType(item);
       const serviceName = item.name || item.title || 'Serviço';
       const serviceDescription = item.description || '';
       
@@ -156,7 +162,7 @@ export const useSaveOrder = () => {
   };
 
   // Map service type to valid enum values
-  const mapToValidServiceType = (item: CartItem) => {
+  const mapToValidServiceType = (item: CartItem): 'email' | 'cpanel_hosting' | 'wordpress_hosting' | 'vps' | 'dedicated_server' | 'exchange' | 'other' => {
     const name = (item.name || item.title || '').toLowerCase();
     
     if (name.includes('email')) {
@@ -169,8 +175,10 @@ export const useSaveOrder = () => {
       return 'wordpress_hosting';
     } else if (name.includes('cpanel')) {
       return 'cpanel_hosting';
+    } else if (name.includes('exchange')) {
+      return 'exchange';
     } else {
-      return 'cpanel_hosting'; // Default
+      return 'other';
     }
   };
 

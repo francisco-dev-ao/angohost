@@ -1,321 +1,261 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { ListBullet, CheckCircle, ShieldCheck, PiggyBank, Calendar, AlertCircle } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
+import { useCart } from '@/contexts/CartContext';
+import { formatPrice } from '@/utils/formatters';
+import AdditionalProducts from '@/components/AdditionalProducts';
+import { useDomainAvailability } from '@/hooks/useDomainAvailability';
 
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import Layout from "@/components/Layout";
-import PricingCard from "@/components/PricingCard";
-import { Button } from "@/components/ui/button";
-import { Check } from "lucide-react";
-import { formatPrice } from "@/utils/formatters";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { toast } from "sonner";
-import { useCart } from "@/contexts/CartContext";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Input } from "@/components/ui/input";
-import DomainValidator from "@/components/DomainValidator";
+const cpanelPlans = [
+  {
+    id: 'cpanel-basic',
+    title: 'cPanel Básico',
+    description: 'Ideal para começar, com recursos essenciais para seu site.',
+    price: 9900,
+    storage: '10 GB',
+    bandwidth: 'Ilimitada',
+    databases: '5',
+    emails: '10',
+    features: ['cPanel', 'Certificado SSL', 'Suporte 24/7']
+  },
+  {
+    id: 'cpanel-premium',
+    title: 'cPanel Premium',
+    description: 'Mais recursos e desempenho para sites em crescimento.',
+    price: 19900,
+    storage: '50 GB',
+    bandwidth: 'Ilimitada',
+    databases: 'Ilimitadas',
+    emails: '50',
+    features: ['cPanel', 'Certificado SSL', 'Suporte 24/7', 'Backup Automático']
+  },
+  {
+    id: 'cpanel-business',
+    title: 'cPanel Business',
+    description: 'A solução completa para empresas, com alta capacidade e recursos avançados.',
+    price: 39900,
+    storage: '100 GB',
+    bandwidth: 'Ilimitada',
+    databases: 'Ilimitadas',
+    emails: 'Ilimitadas',
+    features: ['cPanel', 'Certificado SSL', 'Suporte 24/7', 'Backup Automático', 'CDN']
+  }
+];
+
+const additionalProducts = [
+  {
+    id: 'seo-boost',
+    title: 'SEO Boost',
+    description: 'Aumente o tráfego do seu site com otimização SEO profissional.',
+    basePrice: 49900
+  },
+  {
+    id: 'security-pack',
+    title: 'Pacote de Segurança Avançada',
+    description: 'Proteja seu site contra ameaças com nosso pacote de segurança.',
+    basePrice: 29900
+  }
+];
 
 const CpanelHosting = () => {
-  const [billingYears, setBillingYears] = useState("1");
-  const [selectedPlan, setSelectedPlan] = useState<any>(null);
-  const [showDialog, setShowDialog] = useState(false);
-  const [dialogTab, setDialogTab] = useState("register");
-  const [domainName, setDomainName] = useState("");
-  const [isDomainValid, setIsDomainValid] = useState(false);
-  
+  const [selectedPlan, setSelectedPlan] = useState<any | null>(null);
+  const [currentDomain, setCurrentDomain] = useState('');
+  const [ownDomainChecked, setOwnDomainChecked] = useState(false);
+	const [domainYears, setDomainYears] = useState<number | null>(1);
   const navigate = useNavigate();
+  const { toast } = useToast();
   const { addToCart } = useCart();
-  
-  // New pricing structure based on angohost.ao
-  const hostingPlans = [
-    {
-      title: "Iniciante",
-      description: "Ideal para sites pessoais e blogs",
-      basePrice: 9900,
-      features: [
-        { text: "1 Site", included: true },
-        { text: "10GB SSD", included: true },
-        { text: "Tráfego Ilimitado", included: true },
-        { text: "5 Contas de Email", included: true },
-        { text: "Certificado SSL", included: true },
-        { text: "Painel cPanel", included: true },
-        { text: "Backup Semanal", included: true },
-        { text: "Suporte 24/7", included: true },
-      ],
-    },
-    {
-      title: "Empresarial",
-      description: "Perfeito para pequenos negócios",
-      basePrice: 15900,
-      period: "mês",
-      popular: true,
-      features: [
-        { text: "10 Sites", included: true },
-        { text: "30GB SSD", included: true },
-        { text: "Tráfego Ilimitado", included: true },
-        { text: "30 Contas de Email", included: true },
-        { text: "Certificado SSL", included: true },
-        { text: "Painel cPanel", included: true },
-        { text: "Backup Diário", included: true },
-        { text: "Suporte 24/7", included: true },
-      ],
-    },
-    {
-      title: "Profissional",
-      description: "Para médias e grandes empresas",
-      basePrice: 28900,
-      period: "mês",
-      features: [
-        { text: "Sites Ilimitados", included: true },
-        { text: "100GB SSD", included: true },
-        { text: "Tráfego Ilimitado", included: true },
-        { text: "100 Contas de Email", included: true },
-        { text: "Certificado SSL", included: true },
-        { text: "Painel cPanel", included: true },
-        { text: "Backup Diário", included: true },
-        { text: "Suporte 24/7 Premium", included: true },
-      ],
-    },
-  ];
+  const { checkAvailability, availability, loading } = useDomainAvailability();
+  const [domainPrice, setDomainPrice] = useState(2000);
 
-  // Calculate price with multi-year discounts
-  const calculateYearlyPrice = (basePrice: number, years: number) => {
-    // Apply discount for multi-year plans (5% per additional year)
-    let discount = 0;
-    if (years > 1) {
-      discount = (years - 1) * 0.05;
+  useEffect(() => {
+    if (availability && availability.available === false) {
+      setDomainPrice(2000);
     }
-    return Math.round(basePrice * years * (1 - discount));
-  };
+  }, [availability]);
 
-  const yearlyHostingPlans = hostingPlans.map(plan => ({
-    ...plan,
-    price: formatPrice(calculateYearlyPrice(plan.basePrice, parseInt(billingYears))),
-    period: `${billingYears} ${parseInt(billingYears) === 1 ? 'ano' : 'anos'}`
-  }));
-  
-  const handlePlanSelect = (plan: any) => {
+  const handlePlanClick = (plan: any) => {
     setSelectedPlan(plan);
-    setShowDialog(true);
-    setIsDomainValid(false);
-    setDomainName("");
   };
-  
-  const handleDomainValidated = (domain: string) => {
-    setDomainName(domain);
-    setIsDomainValid(true);
+
+  const handleDomainSearch = async () => {
+    if (currentDomain) {
+      await checkAvailability(currentDomain);
+    }
   };
-  
-  const handleAddToCart = () => {
-    if (!selectedPlan) return;
+
+  const handleOwnDomainChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setOwnDomainChecked(e.target.checked);
+  };
+
+	const handleDomainYearsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setDomainYears(parseInt(e.target.value));
+  };
+
+  const handleAddToCart = (plan: any, domainName: string = '') => {
+    const years = domainYears || 1;
     
-    if (dialogTab === "register") {
-      // Adding hosting with domain registration
-      if (!isDomainValid) {
-        toast.error("Por favor, verifique a disponibilidade do domínio primeiro");
-        return;
-      }
-      
-      // First add domain to cart
+    addToCart({
+      id: `hosting-${plan.title}-${Date.now()}`,
+      name: `${plan.title} Hosting`,
+      title: plan.title,
+      price: plan.price * years,
+      basePrice: plan.price,
+      quantity: 1,
+      type: 'service',
+      years,
+      domain: domainName
+    });
+    
+    toast.success(`Plano ${plan.title} adicionado ao carrinho!`);
+    setSelectedPlan(null);
+  };
+
+  const handleAddPlanWithDomain = (plan: any) => {
+    const years = domainYears || 1;
+    
+    // Add the hosting plan
+    addToCart({
+      id: `hosting-${plan.title}-${Date.now()}`,
+      name: `${plan.title} Hosting`,
+      title: plan.title,
+      price: plan.price * years,
+      basePrice: plan.basePrice || plan.price,
+      quantity: 1,
+      type: 'service',
+      years,
+      description: plan.description,
+      domain: currentDomain
+    });
+    
+    // Add the domain
+    if (currentDomain && !ownDomainChecked) {
       addToCart({
-        id: `domain-${Date.now()}`,
-        title: `Domínio ${domainName}`,
-        price: 5000, // Domain registration price
-        basePrice: 5000,
+        id: `domain-${currentDomain}-${Date.now()}`,
+        name: `Domínio: ${currentDomain}`,
+        title: `Domínio: ${currentDomain}`,
         quantity: 1,
+        price: domainPrice,
+        basePrice: domainPrice,
         type: 'domain',
-        years: parseInt(billingYears),
-        domain: domainName
+        domain: currentDomain
       });
-      
-      toast.success(`Domínio ${domainName} adicionado ao carrinho`);
     }
     
-    // Add the hosting plan to cart
-    const hostingItem = {
-      id: `hosting-${Date.now()}`,
-      title: `Hospedagem ${selectedPlan.title}`,
-      price: calculateYearlyPrice(selectedPlan.basePrice, parseInt(billingYears)),
-      basePrice: selectedPlan.basePrice,
-      quantity: 1,
-      type: 'hosting',
-      years: parseInt(billingYears),
-      description: selectedPlan.description,
-      domain: dialogTab === "register" ? domainName : undefined
-    };
-    
-    addToCart(hostingItem);
-    toast.success(`Plano ${selectedPlan.title} adicionado ao carrinho`);
-    setShowDialog(false);
-    setSelectedPlan(null);
-    setDomainName("");
-    setIsDomainValid(false);
-    
-    // Navigate to cart
-    navigate("/cart");
+    toast.success(`Plano ${plan.title} com domínio adicionado ao carrinho!`);
+    navigate('/cart');
   };
 
   return (
-    <Layout>
-      <div className="bg-muted/50 py-12">
-        <div className="container">
-          <div className="max-w-3xl mx-auto text-center">
-            <h1 className="text-4xl font-bold mb-4">Hospedagem cPanel</h1>
-            <p className="text-lg text-muted-foreground mb-6">
-              Nossa hospedagem cPanel oferece alto desempenho, segurança e facilidade de uso para gerenciar seus sites.
-            </p>
-          </div>
-        </div>
-      </div>
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-3xl font-bold mb-6">cPanel Hosting</h1>
+      <p className="text-muted-foreground mb-4">
+        Escolha o plano cPanel perfeito para o seu site. Todos os nossos planos incluem recursos essenciais para você começar.
+      </p>
 
-      <section className="py-16">
-        <div className="container">
-          <div className="max-w-xs mx-auto mb-8">
-            <Select value={billingYears} onValueChange={setBillingYears}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione o período" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="1">1 ano</SelectItem>
-                <SelectItem value="2">2 anos</SelectItem>
-                <SelectItem value="3">3 anos</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            {yearlyHostingPlans.map((plan) => (
-              <PricingCard
-                key={plan.title}
-                {...plan}
-                ctaText="Adicionar ao carrinho"
-                onAction={() => handlePlanSelect(plan)}
-              />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="py-16 bg-muted/50">
-        <div className="container">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4">Todos os planos incluem</h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Nossos planos são cheios de recursos para oferecer a melhor experiência de hospedagem.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 max-w-4xl mx-auto">
-            {[
-              "Painel cPanel",
-              "Certificado SSL Grátis",
-              "99.9% de Uptime",
-              "Suporte 24/7",
-              "Instalador WordPress",
-              "Backup Automático",
-              "PHP Atualizado",
-              "Base de Dados MySQL",
-              "Criador de Sites",
-              "Firewall Avançado",
-              "Proteção DDoS",
-              "Migração Gratuita",
-            ].map((feature, i) => (
-              <div key={i} className="flex items-center gap-2">
-                <div className="h-5 w-5 rounded-full bg-primary/20 flex items-center justify-center text-primary">
-                  <Check className="h-3 w-3" />
-                </div>
-                <span className="text-sm">{feature}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="py-16">
-        <div className="container">
-          <div className="bg-primary text-primary-foreground rounded-lg p-8 text-center">
-            <h2 className="text-2xl font-bold mb-4">Ainda está com dúvidas?</h2>
-            <p className="mb-6 text-primary-foreground/90">
-              Nossa equipe está pronta para ajudar você a escolher o melhor plano para o seu projeto.
-            </p>
-            <div className="flex flex-wrap justify-center gap-4">
-              <Button
-                variant="secondary"
-                size="lg"
-              >
-                Fale com Especialista
-              </Button>
-              <Button
-                variant="outline"
-                size="lg"
-                className="border-white text-white hover:bg-white/10"
-              >
-                Ver FAQ
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        {cpanelPlans.map((plan) => (
+          <Card key={plan.id} className={`p-6 flex flex-col justify-between ${selectedPlan?.id === plan.id ? 'border-2 border-primary' : ''}`}>
+            <div>
+              <h2 className="text-xl font-bold mb-2">{plan.title}</h2>
+              <p className="text-muted-foreground text-sm mb-4">{plan.description}</p>
+              <ul className="list-none pl-0 mb-4">
+                {plan.features.map((feature, index) => (
+                  <li key={index} className="flex items-center gap-2 text-sm mb-1">
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <div className="text-2xl font-bold mb-2">{formatPrice(plan.price)} / mês</div>
+              <Button onClick={() => handlePlanClick(plan)} className="w-full">
+                Selecionar Plano
               </Button>
             </div>
-          </div>
-        </div>
-      </section>
-      
-      {/* Domain registration/existing domain dialog */}
-      <Dialog open={showDialog} onOpenChange={setShowDialog}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Adicionar Hospedagem</DialogTitle>
-            <DialogDescription>
-              Escolha entre registrar um novo domínio ou usar um domínio que você já possui.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <Tabs defaultValue="register" value={dialogTab} onValueChange={setDialogTab}>
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="register">Registrar novo domínio</TabsTrigger>
-              <TabsTrigger value="existing">Usar domínio existente</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="register" className="mt-4">
-              <div className="space-y-4">
-                <div className="grid w-full gap-2">
-                  <label htmlFor="domainName" className="text-sm font-medium">Nome do domínio</label>
-                  <DomainValidator onDomainValidated={handleDomainValidated} />
-                </div>
-                {isDomainValid && domainName && (
-                  <div className="bg-green-50 p-3 rounded border border-green-200 flex items-center gap-2">
-                    <Check className="h-4 w-4 text-green-500" />
-                    <span className="text-sm text-green-700">Domínio {domainName} está disponível!</span>
+          </Card>
+        ))}
+      </div>
+
+      {selectedPlan && (
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>Adicionar Domínio</CardTitle>
+            <CardDescription>
+              Escolha um domínio para usar com seu plano de hospedagem.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center space-x-2">
+              <Input
+                type="text"
+                placeholder="exemplo.ao"
+                value={currentDomain}
+                onChange={(e) => setCurrentDomain(e.target.value)}
+              />
+              <Button onClick={handleDomainSearch} disabled={loading}>
+                {loading ? 'Verificando...' : 'Verificar'}
+              </Button>
+            </div>
+            {availability && (
+              <>
+                {availability.available ? (
+                  <div className="text-green-500 flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4" />
+                    <span>{currentDomain} está disponível!</span>
+                  </div>
+                ) : (
+                  <div className="text-red-500 flex items-center gap-2">
+                    <AlertCircle className="h-4 w-4" />
+                    <span>{currentDomain} não está disponível.</span>
                   </div>
                 )}
-                <p className="text-sm text-muted-foreground">
-                  O registro de domínio tem uma taxa adicional de {formatPrice(5000)}/ano
-                </p>
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="existing" className="mt-4">
-              <div className="space-y-4">
-                <p className="text-sm">
-                  Se você já possui um domínio com outro provedor, você pode usá-lo com nossa hospedagem.
-                </p>
-                <p className="text-sm font-medium">
-                  Após a contratação, enviaremos instruções sobre como apontar seu domínio para nossos servidores.
-                </p>
-              </div>
-            </TabsContent>
-          </Tabs>
-          
-          <DialogFooter className="sm:justify-end">
-            <Button variant="outline" onClick={() => setShowDialog(false)}>
+              </>
+            )}
+            <div className="flex items-center space-x-2">
+              <Input
+                type="number"
+                placeholder="1"
+                defaultValue={1}
+                onChange={handleDomainYearsChange}
+              />
+              <Label>Anos</Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Input
+                type="checkbox"
+                id="own-domain"
+                checked={ownDomainChecked}
+                onChange={handleOwnDomainChange}
+              />
+              <Label htmlFor="own-domain">Já possuo este domínio</Label>
+            </div>
+          </CardContent>
+          <div className="p-6 border-t flex justify-end space-x-4">
+            <Button variant="outline" onClick={() => setSelectedPlan(null)}>
               Cancelar
             </Button>
-            <Button 
-              onClick={handleAddToCart} 
-              disabled={dialogTab === "register" && !isDomainValid}
-            >
-              Continuar
+            <Button onClick={() => handleAddToCart(selectedPlan, ownDomainChecked ? currentDomain : '')}>
+              Adicionar Plano
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </Layout>
+            {!ownDomainChecked && (
+              <Button onClick={() => handleAddPlanWithDomain(selectedPlan)}>
+                Adicionar Plano + Domínio
+              </Button>
+            )}
+          </div>
+        </Card>
+      )}
+
+      <AdditionalProducts products={additionalProducts} />
+    </div>
   );
 };
 

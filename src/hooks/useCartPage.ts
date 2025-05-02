@@ -58,6 +58,7 @@ export const useCartPage = () => {
   const handleAddProduct = (product: any, years: number = 1) => {
     addToCart({
       id: `${product.title}-${Date.now()}`,
+      name: product.title,
       title: product.title,
       description: product.description,
       quantity: 1,
@@ -85,6 +86,7 @@ export const useCartPage = () => {
     // Add email product to cart
     const emailItem: CartItem = {
       id: `${selectedEmailPlan.title}-${Date.now()}`,
+      name: `${selectedEmailPlan.title} (${config.userCount} usuários)`,
       title: `${selectedEmailPlan.title} (${config.userCount} usuários por ${years} ${years === 1 ? 'ano' : 'anos'})`,
       quantity: config.userCount,
       price: selectedEmailPlan.basePrice * config.userCount * years,
@@ -98,6 +100,7 @@ export const useCartPage = () => {
     if (config.domainOption === 'new' && config.selectedDomain) {
       const domainItem: CartItem = {
         id: `domain-${config.selectedDomain}-${Date.now()}`,
+        name: `Domínio: ${config.selectedDomain}`,
         title: `Domínio: ${config.selectedDomain}`,
         quantity: 1,
         price: 2000, // Default domain price

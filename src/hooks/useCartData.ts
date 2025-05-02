@@ -31,23 +31,26 @@ export const useCartData = () => {
             // No profile found, use local storage
             const localCart = localStorage.getItem('cart');
             if (localCart) {
-              setItems(JSON.parse(localCart));
+              const parsedCart = JSON.parse(localCart);
+              setItems(ensureCartItemsHaveName(parsedCart));
             }
           } else if (data && data.cart_items) {
             // Use cart items from profile - properly typed
-            setItems((data.cart_items as unknown) as CartItem[]);
+            setItems(ensureCartItemsHaveName(data.cart_items as any));
           } else {
             // No cart items in profile, try local storage
             const localCart = localStorage.getItem('cart');
             if (localCart) {
-              setItems(JSON.parse(localCart));
+              const parsedCart = JSON.parse(localCart);
+              setItems(ensureCartItemsHaveName(parsedCart));
             }
           }
         } else {
           // If not logged in, load from local storage
           const localCart = localStorage.getItem('cart');
           if (localCart) {
-            setItems(JSON.parse(localCart));
+            const parsedCart = JSON.parse(localCart);
+            setItems(ensureCartItemsHaveName(parsedCart));
           }
         }
       } catch (err: any) {
@@ -57,7 +60,8 @@ export const useCartData = () => {
         // Try local storage as fallback
         const localCart = localStorage.getItem('cart');
         if (localCart) {
-          setItems(JSON.parse(localCart));
+          const parsedCart = JSON.parse(localCart);
+          setItems(ensureCartItemsHaveName(parsedCart));
         }
       } finally {
         setIsLoading(false);
@@ -66,6 +70,17 @@ export const useCartData = () => {
     
     loadCart();
   }, [user]);
+
+  // Helper function to ensure all cart items have the 'name' property
+  const ensureCartItemsHaveName = (cartItems: any[]): CartItem[] => {
+    if (!cartItems || !Array.isArray(cartItems)) return [];
+    
+    return cartItems.map(item => ({
+      ...item,
+      // Ensure name exists (use title if name is not available)
+      name: item.name || item.title || 'Item sem nome'
+    }));
+  };
   
   const saveCart = async (newItems: CartItem[]) => {
     // Always save to local storage
@@ -91,18 +106,24 @@ export const useCartData = () => {
   };
 
   const addToCart = (item: CartItem) => {
+    // Ensure the item has a name property
+    const itemWithName = {
+      ...item,
+      name: item.name || item.title || 'Item sem nome'
+    };
+    
     // Check if item already exists in cart
-    const existingItemIndex = items.findIndex(i => i.id === item.id);
+    const existingItemIndex = items.findIndex(i => i.id === itemWithName.id);
     
     let newItems: CartItem[];
     
     if (existingItemIndex >= 0) {
       // Update quantity if item exists
       newItems = [...items];
-      newItems[existingItemIndex].quantity += item.quantity;
+      newItems[existingItemIndex].quantity += itemWithName.quantity;
     } else {
       // Add new item
-      newItems = [...items, item];
+      newItems = [...items, itemWithName];
     }
     
     setItems(newItems);
