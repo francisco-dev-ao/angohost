@@ -17,7 +17,6 @@ export const useSaveOrder = () => {
 
   const saveCartAsOrder = async (orderData?: {
     paymentMethodId?: string;
-    contactProfileId?: string | null;
     clientDetails?: any;
     skipPayment?: boolean;
   }) => {
@@ -82,7 +81,6 @@ export const useSaveOrder = () => {
           total_amount: totalAmount,
           payment_status: orderData?.skipPayment ? 'pending_invoice' : 'pending',
           payment_method: paymentMethodValue,
-          contact_profile_id: orderData?.contactProfileId || null,
           client_details: orderData?.clientDetails || null
         })
         .select()

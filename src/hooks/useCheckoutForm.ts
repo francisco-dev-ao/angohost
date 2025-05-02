@@ -12,10 +12,7 @@ export const useCheckoutForm = () => {
   const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string | null>(null);
-  const [selectedContactProfile, setSelectedContactProfile] = useState<string | null>(null);
   const [skipPayment, setSkipPayment] = useState(false);
-  const [contactProfiles, setContactProfiles] = useState<any[]>([]);
-  const [isLoadingProfiles, setIsLoadingProfiles] = useState(true);
   
   const [formData, setFormData] = useState({
     name: user?.user_metadata?.full_name || '',
@@ -30,7 +27,6 @@ export const useCheckoutForm = () => {
     if (user) {
       fetchUserProfile();
       fetchPaymentMethods();
-      fetchContactProfiles();
     }
   }, [user]);
 
@@ -62,32 +58,6 @@ export const useCheckoutForm = () => {
       setProfileLoaded(true);
     } catch (error) {
       console.error('Error fetching user profile:', error);
-    }
-  };
-
-  const fetchContactProfiles = async () => {
-    if (!user) return;
-    
-    try {
-      setIsLoadingProfiles(true);
-      const { success, data, error } = await executeQuery(
-        'SELECT id, name, document FROM contact_profiles WHERE user_id = $1 ORDER BY name',
-        [user.id]
-      );
-      
-      if (success && data) {
-        setContactProfiles(data);
-        if (data.length > 0) {
-          setSelectedContactProfile(data[0].id);
-        }
-      } else if (error) {
-        throw new Error(error);
-      }
-    } catch (error: any) {
-      console.error('Error fetching contact profiles:', error);
-      toast.error('Erro ao carregar perfis de contato');
-    } finally {
-      setIsLoadingProfiles(false);
     }
   };
 
@@ -153,12 +123,8 @@ export const useCheckoutForm = () => {
     loading,
     selectedPaymentMethod,
     setSelectedPaymentMethod,
-    selectedContactProfile,
-    setSelectedContactProfile,
     skipPayment,
     setSkipPayment,
-    contactProfiles,
-    isLoadingProfiles,
     hasDomains
   };
 };

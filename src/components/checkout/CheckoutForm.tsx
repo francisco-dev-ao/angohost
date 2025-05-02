@@ -4,12 +4,10 @@ import { useNavigate } from 'react-router-dom';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { useCart } from '@/contexts/CartContext';
 import { useSaveOrder } from '@/hooks/useSaveOrder';
-import { useContactProfiles } from '@/hooks/useContactProfiles';
 import { toast } from 'sonner';
 import { useCheckoutForm } from '@/hooks/useCheckoutForm';
 
 // Import smaller components
-import ContactProfileSection from './form/ContactProfileSection';
 import ClientInfoSection from './form/ClientInfoSection';
 import PaymentOptionsSection from './form/PaymentOptionsSection';
 import EmptyCartNotice from './form/EmptyCartNotice';
@@ -25,7 +23,6 @@ const CheckoutForm = ({ onSubmit, onComplete, loading: externalLoading }: Checko
   const { user } = useSupabaseAuth();
   const { items } = useCart();
   const { saveCartAsOrder, isSaving } = useSaveOrder();
-  const { profiles, isLoading: isLoadingProfiles } = useContactProfiles();
   
   const {
     formData,
@@ -34,18 +31,10 @@ const CheckoutForm = ({ onSubmit, onComplete, loading: externalLoading }: Checko
     loading,
     selectedPaymentMethod,
     setSelectedPaymentMethod,
-    selectedContactProfile,
-    setSelectedContactProfile,
     skipPayment,
     setSkipPayment,
     hasDomains
   } = useCheckoutForm();
-
-  useEffect(() => {
-    if (profiles && profiles.length > 0) {
-      setSelectedContactProfile(profiles[0].id);
-    }
-  }, [profiles]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,7 +47,6 @@ const CheckoutForm = ({ onSubmit, onComplete, loading: externalLoading }: Checko
         phone: formData.phone,
         address: formData.address,
         paymentMethod: selectedPaymentMethod,
-        contactProfileId: selectedContactProfile,
         skipPayment: skipPayment
       });
       return;
@@ -75,19 +63,16 @@ const CheckoutForm = ({ onSubmit, onComplete, loading: externalLoading }: Checko
       return;
     }
     
-    if (hasDomains() && !selectedContactProfile) {
-      toast.error('Selecione um perfil de contato para titularidade dos domínios');
-      return;
-    }
-    
     try {
       const orderData = {
         paymentMethodId: skipPayment ? null : selectedPaymentMethod,
-        contactProfileId: selectedContactProfile,
         skipPayment: skipPayment,
-        clientDetails: selectedContactProfile 
-          ? profiles.find(p => p.id === selectedContactProfile) 
-          : { name: formData.name, email: formData.email, phone: formData.phone, address: formData.address }
+        clientDetails: { 
+          name: formData.name, 
+          email: formData.email, 
+          phone: formData.phone, 
+          address: formData.address 
+        }
       };
       
       const order = await saveCartAsOrder(orderData);
@@ -113,14 +98,6 @@ const CheckoutForm = ({ onSubmit, onComplete, loading: externalLoading }: Checko
   return (
     <form onSubmit={handleSubmit}>
       <div className="space-y-6">
-        <ContactProfileSection 
-          profiles={profiles}
-          isLoadingProfiles={isLoadingProfiles}
-          selectedContactProfile={selectedContactProfile}
-          setSelectedContactProfile={setSelectedContactProfile}
-          hasDomains={hasDomains()}
-        />
-
         <ClientInfoSection 
           formData={formData}
           profileLoaded={profileLoaded}

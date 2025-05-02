@@ -657,7 +657,6 @@ export type Database = {
           billing_address: Json | null
           client_details: Json | null
           completed_at: string | null
-          contact_profile_id: string | null
           created_at: string | null
           discount_amount: number | null
           id: string
@@ -677,7 +676,6 @@ export type Database = {
           billing_address?: Json | null
           client_details?: Json | null
           completed_at?: string | null
-          contact_profile_id?: string | null
           created_at?: string | null
           discount_amount?: number | null
           id?: string
@@ -697,7 +695,6 @@ export type Database = {
           billing_address?: Json | null
           client_details?: Json | null
           completed_at?: string | null
-          contact_profile_id?: string | null
           created_at?: string | null
           discount_amount?: number | null
           id?: string
@@ -714,13 +711,6 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "orders_contact_profile_id_fkey"
-            columns: ["contact_profile_id"]
-            isOneToOne: false
-            referencedRelation: "contact_profiles"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "orders_payment_method_fkey"
             columns: ["payment_method"]

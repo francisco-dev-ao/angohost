@@ -1,3 +1,4 @@
+
 export type AdminUser = {
   id: string;
   email: string;
@@ -100,12 +101,4 @@ export interface Order {
   items: any[];
   createdAt: string;
   updatedAt: string;
-  contactProfile?: {
-    id: string;
-    name: string;
-    email: string;
-    document: string;
-    phone: string;
-    address: string;
-  } | null;
 }
