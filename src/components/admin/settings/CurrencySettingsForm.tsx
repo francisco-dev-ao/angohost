@@ -14,6 +14,12 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
+// Define a type for the admin settings
+type AdminSettings = {
+  currencyFormat: string;
+  [key: string]: any;
+};
+
 export const CurrencySettingsForm = () => {
   const [currencyFormat, setCurrencyFormat] = useState<string>('.');
   const [isSaving, setIsSaving] = useState(false);
@@ -30,8 +36,12 @@ export const CurrencySettingsForm = () => {
           .eq('id', 'general_settings')
           .single();
         
-        if (!error && data && data.settings && data.settings.currencyFormat) {
-          setCurrencyFormat(data.settings.currencyFormat);
+        if (!error && data && data.settings) {
+          // Cast settings to AdminSettings type
+          const settings = data.settings as AdminSettings;
+          if (settings.currencyFormat) {
+            setCurrencyFormat(settings.currencyFormat);
+          }
         }
       } catch (error) {
         console.error('Error fetching currency settings:', error);

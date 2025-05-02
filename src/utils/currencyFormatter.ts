@@ -1,6 +1,12 @@
 
 import { supabase } from '@/integrations/supabase/client';
 
+// Define a type for the admin settings
+type AdminSettings = {
+  currencyFormat: string;
+  [key: string]: any;
+};
+
 // Cache for currency format to avoid excessive requests
 let cachedFormat: string | null = null;
 let formatFetchPromise: Promise<string> | null = null;
@@ -28,14 +34,19 @@ export const getCurrencyFormat = async (): Promise<string> => {
         .eq('id', 'general_settings')
         .single();
       
-      if (!error && data && data.settings && data.settings.currencyFormat) {
-        cachedFormat = data.settings.currencyFormat;
-        resolve(data.settings.currencyFormat);
-      } else {
-        // Default to dot as separator if not found
-        cachedFormat = '.';
-        resolve('.');
+      if (!error && data && data.settings) {
+        // Cast settings to AdminSettings type
+        const settings = data.settings as AdminSettings;
+        if (settings.currencyFormat) {
+          cachedFormat = settings.currencyFormat;
+          resolve(settings.currencyFormat);
+          return;
+        }
       }
+      
+      // Default to dot as separator if not found
+      cachedFormat = '.';
+      resolve('.');
     } catch (error) {
       console.error('Error fetching currency format:', error);
       cachedFormat = '.';  // Default
