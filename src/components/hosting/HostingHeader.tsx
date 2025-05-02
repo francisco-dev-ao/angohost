@@ -1,34 +1,13 @@
 
-import React from "react";
-import { Button } from "@/components/ui/button";
+import React from 'react';
 
-interface HostingHeaderProps {
-  title?: string;
-  description?: string;
-  totalServices?: number;
-  onCreateNew?: () => void;
-}
-
-const HostingHeader = ({ 
-  title = "Hospedagem", 
-  description = "Gerenciar serviços de hospedagem",
-  totalServices,
-  onCreateNew
-}: HostingHeaderProps) => {
+const HostingHeader = () => {
   return (
-    <div className="flex items-center justify-between mb-8">
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight">{title}</h2>
-        <p className="text-muted-foreground">
-          {description}
-          {totalServices !== undefined && ` (${totalServices} serviços)`}
-        </p>
-      </div>
-      {onCreateNew && (
-        <Button onClick={onCreateNew}>
-          Criar Novo Serviço
-        </Button>
-      )}
+    <div className="text-center mb-10">
+      <h1 className="text-4xl font-bold mb-4">Hospedagem de Sites</h1>
+      <p className="text-xl text-muted-foreground mb-6 max-w-2xl mx-auto">
+        Escolha o plano ideal para seu projeto com a melhor relação custo-benefício
+      </p>
     </div>
   );
 };
