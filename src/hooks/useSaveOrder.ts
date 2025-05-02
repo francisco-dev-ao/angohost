@@ -64,19 +64,17 @@ export const useSaveOrder = () => {
       
       // Format items to ensure they're a valid JSON array and not a string
       const formattedItems = items.map(item => ({
-        name: item.title || item.name || "Produto",
+        name: item.title || "Produto",
         quantity: item.quantity,
         price: item.price,
         type: item.type || 'product',
         domain: item.domain || null
       }));
       
-      // Create order in database (or mock in dev)
-      let order;
-      if (import.meta.env.DEV || window.location.hostname.includes('lovable.app')) {
-        // In development, create a mock order
-        order = {
-          id: "order" + Date.now(),
+      // Create order in database
+      const { data, error } = await supabase
+        .from('orders')
+        .insert({
           order_number: orderNumber,
           user_id: user.id,
           status: orderData?.skipPayment ? 'processing' : 'pending',
@@ -84,62 +82,20 @@ export const useSaveOrder = () => {
           total_amount: totalAmount,
           payment_status: orderData?.skipPayment ? 'pending_invoice' : 'pending',
           payment_method: paymentMethodValue,
-          client_details: clientDetails,
-          created_at: new Date().toISOString(),
-        };
-        
-        // Simulate invoice creation
-        const invoice = {
-          id: "invoice" + Date.now(),
-          invoice_number: "INV-" + Date.now().toString().slice(-8),
-          user_id: user.id,
-          amount: totalAmount,
-          status: 'pending',
-          items: formattedItems,
-          order_id: order.id,
-          due_date: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(),
-          created_at: new Date().toISOString()
-        };
-        
-        // Store in localStorage to simulate persistence
-        const savedOrders = JSON.parse(localStorage.getItem('mock_orders') || '[]');
-        const savedInvoices = JSON.parse(localStorage.getItem('mock_invoices') || '[]');
-        savedOrders.push(order);
-        savedInvoices.push(invoice);
-        localStorage.setItem('mock_orders', JSON.stringify(savedOrders));
-        localStorage.setItem('mock_invoices', JSON.stringify(savedInvoices));
-        
-        // Delay to simulate API call
-        await new Promise(resolve => setTimeout(resolve, 800));
-      } else {
-        // In production, create real order
-        const { data, error } = await supabase
-          .from('orders')
-          .insert({
-            order_number: orderNumber,
-            user_id: user.id,
-            status: orderData?.skipPayment ? 'processing' : 'pending',
-            items: formattedItems,
-            total_amount: totalAmount,
-            payment_status: orderData?.skipPayment ? 'pending_invoice' : 'pending',
-            payment_method: paymentMethodValue,
-            client_details: clientDetails
-          })
-          .select()
-          .single();
+          client_details: clientDetails
+        })
+        .select()
+        .single();
 
-        if (error) {
-          throw error;
-        }
-        
-        order = data;
+      if (error) {
+        throw error;
       }
-
+      
       // Clear cart after successful order creation
       clearCart();
       
       toast.success('Pedido salvo com sucesso');
-      return order;
+      return data;
     } catch (error: any) {
       toast.error('Erro ao salvar o pedido: ' + error.message);
       return null;

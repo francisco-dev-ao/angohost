@@ -32,20 +32,6 @@ export const useClientDashboard = () => {
         setIsLoading(true);
         setError(null);
 
-        // For mock data in development or preview environments, return fake stats
-        if (import.meta.env.DEV || window.location.hostname.includes('lovable.app')) {
-          setTimeout(() => {
-            setStats({
-              activeServices: 3,
-              activeDomains: 2,
-              pendingInvoices: 1,
-              totalSpent: 75000,
-            });
-            setIsLoading(false);
-          }, 800);
-          return;
-        }
-
         // Get active services count
         const servicesResult = await executeQuery(
           "SELECT COUNT(*) FROM client_services WHERE user_id = $1 AND status = 'active'",

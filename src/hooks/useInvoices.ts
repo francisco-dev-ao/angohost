@@ -33,33 +33,6 @@ export const useInvoices = () => {
     try {
       setIsLoading(true);
       
-      // For development or preview environments
-      if (import.meta.env.DEV || window.location.hostname.includes('lovable.app')) {
-        setTimeout(() => {
-          const mockInvoices: Invoice[] = [
-            {
-              id: "1",
-              user_id: user.id,
-              invoice_number: "INV-20250502-1234",
-              amount: 15000,
-              status: 'pending',
-              due_date: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(),
-              items: [{
-                title: "Domínio exemplo.ao",
-                price: 15000,
-                quantity: 1
-              }],
-              created_at: new Date().toISOString(),
-              order_id: "order123",
-              download_url: "#"
-            }
-          ];
-          setInvoices(mockInvoices);
-          setIsLoading(false);
-        }, 800);
-        return;
-      }
-      
       // For production environment
       const result = await executeQuery(
         `SELECT * FROM invoices WHERE user_id = $1 ORDER BY created_at DESC`,
@@ -87,80 +60,6 @@ export const useInvoices = () => {
 
   const downloadInvoice = async (invoiceId: string) => {
     try {
-      // For development or preview environments, show a simulated download
-      if (import.meta.env.DEV || window.location.hostname.includes('lovable.app')) {
-        toast.info('Gerando PDF da fatura (simulação)...');
-        
-        setTimeout(() => {
-          toast.success('Fatura pronta para download (simulação)');
-          
-          // Simular download abrindo uma nova janela
-          const newWindow = window.open('', '_blank');
-          if (newWindow) {
-            newWindow.document.write(`
-              <html>
-                <head>
-                  <title>Fatura INV-20250502-1234</title>
-                </head>
-                <body style="font-family: Arial, sans-serif; margin: 40px;">
-                  <div style="max-width: 800px; margin: 0 auto; padding: 20px; border: 1px solid #eaeaea;">
-                    <div style="text-align: center; margin-bottom: 30px;">
-                      <h1>FATURA</h1>
-                      <p>AngoHost - Serviços de Tecnologia</p>
-                    </div>
-                    
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 30px;">
-                      <div>
-                        <p><strong>Cliente:</strong> Cliente de Teste</p>
-                        <p><strong>Email:</strong> cliente@exemplo.com</p>
-                        <p><strong>Telefone:</strong> +244 923 456 789</p>
-                      </div>
-                      <div>
-                        <p><strong>Fatura:</strong> INV-20250502-1234</p>
-                        <p><strong>Data:</strong> ${new Date().toLocaleDateString()}</p>
-                        <p><strong>Vencimento:</strong> ${new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toLocaleDateString()}</p>
-                      </div>
-                    </div>
-                    
-                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
-                      <thead>
-                        <tr style="background-color: #f2f2f2;">
-                          <th style="padding: 10px; text-align: left; border-bottom: 1px solid #ddd;">Item</th>
-                          <th style="padding: 10px; text-align: right; border-bottom: 1px solid #ddd;">Quantidade</th>
-                          <th style="padding: 10px; text-align: right; border-bottom: 1px solid #ddd;">Preço</th>
-                          <th style="padding: 10px; text-align: right; border-bottom: 1px solid #ddd;">Total</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr>
-                          <td style="padding: 10px; border-bottom: 1px solid #ddd;">Domínio exemplo.ao</td>
-                          <td style="padding: 10px; text-align: right; border-bottom: 1px solid #ddd;">1</td>
-                          <td style="padding: 10px; text-align: right; border-bottom: 1px solid #ddd;">15.000 Kz</td>
-                          <td style="padding: 10px; text-align: right; border-bottom: 1px solid #ddd;">15.000 Kz</td>
-                        </tr>
-                      </tbody>
-                      <tfoot>
-                        <tr>
-                          <td colspan="3" style="padding: 10px; text-align: right;"><strong>Total:</strong></td>
-                          <td style="padding: 10px; text-align: right;"><strong>15.000 Kz</strong></td>
-                        </tr>
-                      </tfoot>
-                    </table>
-                    
-                    <div style="margin-top: 40px; text-align: center;">
-                      <p>Esta é uma fatura simulada para fins de demonstração.</p>
-                    </div>
-                  </div>
-                </body>
-              </html>
-            `);
-            newWindow.document.close();
-          }
-        }, 1500);
-        return;
-      }
-      
-      // For production environment
       const result = await executeQuery(
         `SELECT invoice_number, download_url FROM invoices WHERE id = $1`,
         [invoiceId]

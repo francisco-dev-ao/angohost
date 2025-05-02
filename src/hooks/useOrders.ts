@@ -17,42 +17,6 @@ export const useOrders = () => {
     try {
       setIsLoading(true);
       
-      // For development or preview environments
-      if (import.meta.env.DEV || window.location.hostname.includes('lovable.app')) {
-        setTimeout(() => {
-          const mockOrders: Order[] = [
-            {
-              id: "order123",
-              order_number: "ORD-20250502-1234",
-              user_id: user.id,
-              total_amount: 15000,
-              status: 'completed',
-              payment_status: 'paid',
-              created_at: new Date().toISOString(),
-              payment_method: 'bank_transfer_option',
-              client_details: {
-                name: 'Cliente de Teste',
-                email: 'cliente@exemplo.com',
-                phone: '+244 923 456 789',
-                address: 'Luanda, Angola'
-              },
-              items: [{
-                name: "Domínio exemplo.ao",
-                price: 15000,
-                quantity: 1
-              }],
-              invoice: {
-                id: "1",
-                invoice_number: "INV-20250502-1234"
-              }
-            }
-          ];
-          setOrders(mockOrders);
-          setIsLoading(false);
-        }, 800);
-        return;
-      }
-      
       // For production environment
       const result = await executeQuery(
         `SELECT o.*, i.id as invoice_id, i.invoice_number 
