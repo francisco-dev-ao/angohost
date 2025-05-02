@@ -1,156 +1,212 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Search, ShoppingCart, Loader2 } from "lucide-react";
-import { toast } from 'sonner';
-import { useCart } from '@/contexts/CartContext';
-import { formatPrice } from '@/utils/formatters';
 
-interface DomainExtension {
-  id: string;
-  extension: string;
+import { useState } from 'react';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
+import { Search, Check, ShoppingCart, Network } from "lucide-react";
+import { useCart } from '@/contexts/CartContext';
+import { useNavigate } from 'react-router-dom';
+import { formatPrice } from "@/utils/formatters";
+import { useDomainExtensions } from '@/hooks/useDomainExtensions';
+import { checkDomainAvailability } from '@/utils/dnsResolver';
+import { DomainCheckResult } from '@/types/domain';
+
+interface DomainResult {
+  domain: string;
+  available: boolean;
   price: number;
-  renewal_price: number;
-  description: string;
-  is_popular: boolean;
-  is_active: boolean;
+  records?: any[];
 }
 
 const DomainSearch = () => {
-  const [domain, setDomain] = useState('');
-  const [availableExtensions, setAvailableExtensions] = useState<DomainExtension[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [cartAdded, setCartAdded] = useState(false);
-  const [domainPrice, setDomainPrice] = useState(0);
-  const navigate = useNavigate();
+  const [domain, setDomain] = useState("");
+  const [isSearching, setIsSearching] = useState(false);
+  const [results, setResults] = useState<DomainResult[]>([]);
+  const [selectedDomains, setSelectedDomains] = useState<{[key: string]: boolean}>({});
   const { addToCart } = useCart();
-
-  useEffect(() => {
-    const fetchExtensions = async () => {
-      setIsLoading(true);
-      try {
-        const response = await fetch('/api/domain-extensions');
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data = await response.json();
-        setAvailableExtensions(data);
-      } catch (error) {
-        console.error("Could not fetch domain extensions:", error);
-        toast.error("Falha ao carregar extensões de domínio.");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchExtensions();
-  }, []);
-
-  const handleSearch = async () => {
+  const navigate = useNavigate();
+  const { extensions, loading } = useDomainExtensions();
+  
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
     if (!domain) {
-      toast.error("Por favor, insira um domínio para pesquisar.");
+      toast.error("Por favor, digite um domínio para pesquisar.");
       return;
     }
-
-    // Basic domain validation
-    const domainRegex = /^(?!:\/\/)(?:[a-zA-Z0-9-]{1,63}\.){0,125}[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9]$/;
-    if (!domainRegex.test(domain)) {
-      toast.error("Por favor, insira um domínio válido.");
-      return;
+    
+    setIsSearching(true);
+    
+    try {
+      const baseSearch = domain.includes('.') ? domain.split('.')[0] : domain;
+      
+      // Preparar verificações para todas as extensões
+      const extensionsToCheck = extensions.map(ext => ({
+        domain: `${baseSearch}${ext.extension}`,
+        price: ext.price
+      }));
+      
+      // Verificar domínios em paralelo
+      const checkPromises = extensionsToCheck.map(async (item) => {
+        const result = await checkDomainAvailability(item.domain);
+        return {
+          ...result,
+          price: item.price
+        };
+      });
+      
+      const domainResults = await Promise.all(checkPromises);
+      setResults(domainResults);
+    } catch (error) {
+      console.error("Erro ao verificar domínios:", error);
+      toast.error("Ocorreu um erro ao verificar os domínios.");
+    } finally {
+      setIsSearching(false);
     }
-
-    // Find the .ao extension and set its price
-    const aoExtension = availableExtensions.find(ext => ext.extension === '.ao');
-    if (aoExtension) {
-      setDomainPrice(aoExtension.price);
+  };
+  
+  const handleSelectDomain = (domain: string, price: number) => {
+    setSelectedDomains(prev => ({
+      ...prev,
+      [domain]: !prev[domain]
+    }));
+    
+    if (!selectedDomains[domain]) {
+      addToCart({
+        id: `domain-${domain}`,
+        title: `Domínio ${domain}`,
+        quantity: 1,
+        price: price,
+        basePrice: price,
+        type: 'domain',
+        domain: domain,
+        years: 1
+      });
+      toast.success(`${domain} adicionado ao carrinho!`);
     } else {
-      setDomainPrice(75); // Default .ao price if not found
+      // Não estamos implementando remover do carrinho no momento
+      // O usuário pode remover na página de carrinho
     }
   };
 
-  const handleAddToCart = (domain: string, price: number) => {
-    addToCart({
-      id: `domain-${domain}-${Date.now()}`,
-      name: `Domínio: ${domain}`,
-      title: `Domínio: ${domain}`,
-      quantity: 1,
-      price: price,
-      basePrice: price,
-      type: 'domain',
-      domain: domain,
-      years: 1
-    });
-    
-    toast.success(`Domínio ${domain} adicionado ao carrinho!`);
-    setCartAdded(true);
+  const handleContinueToCheckout = () => {
+    navigate('/enhanced-checkout');
   };
 
-  const handleSelectWithHosting = (domain: string) => {
-    // First, add the domain to the cart
-    addToCart({
-      id: `domain-${domain}-${Date.now()}`,
-      name: `Domínio: ${domain}`,
-      title: `Domínio: ${domain}`,
-      quantity: 1,
-      price: domainPrice,
-      basePrice: domainPrice,
-      type: 'domain',
-      domain: domain,
-      years: 1
+  const handleAddAllToCart = () => {
+    const availableDomains = results.filter(result => result.available);
+    
+    availableDomains.forEach(domain => {
+      if (!selectedDomains[domain.domain]) {
+        addToCart({
+          id: `domain-${domain.domain}`,
+          title: `Domínio ${domain.domain}`,
+          quantity: 1,
+          price: domain.price,
+          basePrice: domain.price,
+          type: 'domain',
+          domain: domain.domain,
+          years: 1
+        });
+        setSelectedDomains(prev => ({
+          ...prev,
+          [domain.domain]: true
+        }));
+      }
     });
     
-    // Then navigate to hosting page with domain pre-selected
-    navigate(`/hosting?domain=${domain}`);
+    toast.success(`${availableDomains.length} domínios adicionados ao carrinho!`);
   };
 
   return (
-    <Card className="w-full">
-      <CardContent className="space-y-4">
-        <div className="grid gap-2">
+    <div className="w-full max-w-3xl mx-auto">
+      <form onSubmit={handleSearch} className="flex gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <Input
             type="text"
-            placeholder="Pesquise o seu domínio"
+            placeholder="Digite o nome do seu domínio..."
             value={domain}
             onChange={(e) => setDomain(e.target.value)}
+            className="pl-10"
           />
         </div>
-        <div className="flex justify-between items-center">
-          <Button onClick={handleSearch} disabled={isLoading}>
-            {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Pesquisando...
-              </>
-            ) : (
-              <>
-                <Search className="mr-2 h-4 w-4" />
-                Pesquisar
-              </>
-            )}
-          </Button>
-          {domain && !cartAdded && (
-            <div className="flex space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleAddToCart(domain, domainPrice)}
+        <Button type="submit" disabled={isSearching || loading}>
+          {isSearching ? "Pesquisando..." : "Verificar"}
+        </Button>
+      </form>
+
+      {results.length > 0 && (
+        <div className="mt-6 space-y-4">
+          <div className="flex justify-between items-center">
+            <h3 className="text-lg font-medium">Resultados da pesquisa</h3>
+            <Button variant="outline" size="sm" onClick={handleAddAllToCart}>
+              Adicionar todos disponíveis
+            </Button>
+          </div>
+          <div className="bg-white rounded-lg shadow-md divide-y">
+            {results.map((result) => (
+              <div 
+                key={result.domain} 
+                className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
               >
-                <ShoppingCart className="mr-2 h-4 w-4" />
-                {formatPrice(domainPrice)}
-              </Button>
-              <Button
-                size="sm"
-                onClick={() => handleSelectWithHosting(domain)}
-              >
-                Contratar com Hosting
-              </Button>
-            </div>
-          )}
+                <div className="space-y-1">
+                  <div className="font-medium flex items-center gap-1">
+                    <Network className="h-4 w-4 text-muted-foreground" />
+                    {result.domain}
+                  </div>
+                  <p className={`text-sm ${result.available ? "text-green-600" : "text-red-600"} flex items-center gap-1`}>
+                    {result.available ? (
+                      <>
+                        <Check className="h-4 w-4" />
+                        Disponível 
+                        {result.records && result.records.length === 0 && " - Sem registros DNS"}
+                      </>
+                    ) : (
+                      <>Indisponível 
+                        {result.records && result.records.length > 0 && (
+                          <span className="text-xs"> - Registros DNS encontrados</span>
+                        )}
+                      </>
+                    )}
+                  </p>
+                </div>
+                {result.available ? (
+                  <div className="flex items-center gap-4">
+                    <div className="text-right">
+                      <p className="font-medium">{formatPrice(result.price)}</p>
+                      <p className="text-sm text-muted-foreground">por ano</p>
+                    </div>
+                    <Button 
+                      onClick={() => handleSelectDomain(result.domain, result.price)}
+                      variant={selectedDomains[result.domain] ? "secondary" : "default"}
+                      size="sm"
+                    >
+                      {selectedDomains[result.domain] ? "Adicionado" : "Adicionar"}
+                    </Button>
+                  </div>
+                ) : (
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    disabled
+                  >
+                    Não disponível
+                  </Button>
+                )}
+              </div>
+            ))}
+          </div>
+          
+          <div className="flex justify-end mt-6">
+            <Button onClick={() => navigate('/enhanced-checkout')} className="flex items-center gap-2">
+              <ShoppingCart className="h-4 w-4" />
+              Finalizar Compra
+            </Button>
+          </div>
         </div>
-      </CardContent>
-    </Card>
+      )}
+    </div>
   );
 };
 

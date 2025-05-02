@@ -13,7 +13,9 @@ export const useOrderSubmission = (formData: any, paymentMethod: string | null) 
   const { clearCart } = useCart();
   const navigate = useNavigate();
   
-  const handleSubmit = async () => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
     if (!paymentMethod) {
       toast.error('Selecione um método de pagamento');
       return;

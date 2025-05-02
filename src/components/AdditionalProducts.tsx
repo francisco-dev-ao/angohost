@@ -1,59 +1,66 @@
 
 import React from 'react';
-import { useCart } from '@/contexts/CartContext';
 import { Button } from '@/components/ui/button';
-import { ShoppingCart } from 'lucide-react';
-import { formatPrice } from '@/utils/formatters';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Plus } from 'lucide-react';
+import { useCart } from '@/contexts/CartContext';
+import { toast } from 'sonner';
 
-interface Product {
+interface AdditionalProduct {
   id: string;
   title: string;
   description: string;
-  basePrice: number;
+  price: number;
 }
 
-interface AdditionalProductsProps {
-  title?: string;
-  products: Product[];
-}
+const additionalProducts: AdditionalProduct[] = [
+  {
+    id: 'ssl-standard',
+    title: 'Certificado SSL Standard',
+    description: 'Proteja seu site com criptografia SSL',
+    price: 19900,
+  },
+  {
+    id: 'backup-service',
+    title: 'Serviço de Backup',
+    description: 'Backup diário automatizado',
+    price: 9900,
+  },
+];
 
-const AdditionalProducts = ({ title = "Produtos Adicionais", products }: AdditionalProductsProps) => {
+const AdditionalProducts = () => {
   const { addToCart } = useCart();
 
-  const handleAddToCart = (product: Product) => {
+  const handleAddProduct = (product: AdditionalProduct) => {
     addToCart({
-      id: `${product.title}-${Date.now()}`,
-      name: product.title, // Ensure name property exists
+      id: product.id,
       title: product.title,
-      price: product.basePrice,
-      basePrice: product.basePrice,
+      price: product.price,
+      basePrice: product.price,
       quantity: 1,
-      description: product.description
     });
+    toast.success(`${product.title} adicionado ao carrinho!`);
   };
 
   return (
-    <div className="mt-8">
-      <h2 className="text-2xl font-bold mb-6">{title}</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {products.map((product) => (
-          <Card key={product.id} className="p-6 flex flex-col justify-between">
-            <div className="mb-4">
-              <h3 className="text-lg font-bold mb-2">{product.title}</h3>
-              <p className="text-muted-foreground text-sm">{product.description}</p>
-            </div>
-            
-            <div className="flex justify-between items-center mt-4">
-              <span className="text-lg font-bold">{formatPrice(product.basePrice)}</span>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => handleAddToCart(product)}
-              >
-                <ShoppingCart className="mr-2 h-4 w-4" /> Adicionar
-              </Button>
-            </div>
+    <div className="space-y-4">
+      <h3 className="text-xl font-semibold">Produtos Adicionais</h3>
+      <div className="grid gap-4 md:grid-cols-2">
+        {additionalProducts.map((product) => (
+          <Card key={product.id}>
+            <CardHeader>
+              <CardTitle>{product.title}</CardTitle>
+              <CardDescription>{product.description}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between">
+                <span className="text-xl font-bold">{product.price.toFixed(2)} kz</span>
+                <Button variant="outline" onClick={() => handleAddProduct(product)}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Adicionar
+                </Button>
+              </div>
+            </CardContent>
           </Card>
         ))}
       </div>

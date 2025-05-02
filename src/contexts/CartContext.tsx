@@ -3,14 +3,25 @@ import React, { createContext, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCartData } from '@/hooks/useCartData';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
-import { CartItem as CartItemType, DomainOwnershipData } from '@/types/cart';
+import { DomainOwnershipData } from '@/types/cart';
 
-// Use the CartItem type from types/cart.ts instead of redefining it here
-export type { CartItemType as CartItem };
+export interface CartItem {
+  id: string;
+  title: string;
+  quantity: number;
+  price: number;
+  basePrice: number;
+  type?: string;
+  domain?: string;
+  description?: string;
+  ownershipData?: DomainOwnershipData;
+  contactProfileId?: string | null;
+  years?: number;
+}
 
 interface CartContextType {
-  items: CartItemType[];
-  addToCart: (item: CartItemType) => void;
+  items: CartItem[];
+  addToCart: (item: CartItem) => void;
   removeFromCart: (itemId: string) => void;
   clearCart: () => void;
   updateItemPrice: (itemId: string, newPrice: number) => void;

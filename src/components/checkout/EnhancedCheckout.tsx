@@ -9,22 +9,21 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ShoppingBag } from 'lucide-react';
 import CountdownTimer from './CountdownTimer';
-import { useCart } from '@/contexts/CartContext';
 
 const EnhancedCheckout = () => {
   const navigate = useNavigate();
-  const { items, total } = useCart();
   
   const {
+    items,
+    subtotal,
+    discount,
+    total,
     loading,
     orderPlaced,
     authVisible,
     handleAuthComplete,
     handleSubmitOrder
   } = useCheckoutProcess();
-
-  const subtotal = items.reduce((acc, item) => acc + (item.price * item.quantity), 0);
-  const discount = subtotal - total;
 
   if (orderPlaced) {
     return <CheckoutSuccess />;
@@ -79,19 +78,10 @@ const EnhancedCheckout = () => {
         </div>
         <div>
           <OrderSummary 
-            currentStep={authVisible ? 1 : 2}
-            canProceed={true}
-            onSubmit={async (e) => {
-              e.preventDefault();
-              await handleSubmitOrder({
-                name: '',
-                email: '',
-                phone: '',
-                address: '',
-                paymentMethod: null,
-                skipPayment: false
-              });
-            }}
+            items={items} 
+            subtotal={subtotal} 
+            discount={discount} 
+            total={total}
           />
         </div>
       </div>

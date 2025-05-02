@@ -13,7 +13,6 @@ import CustomerInfoStep from "./steps/CustomerInfoStep";
 import PaymentStep from "./steps/PaymentStep";
 import OrderConfirmation from "./steps/OrderConfirmation";
 import { supabase } from "@/integrations/supabase/client";
-import { CartItem } from "@/types/cart";
 
 const CheckoutContent = () => {
   const [currentStep, setCurrentStep] = useState(1);
@@ -104,12 +103,6 @@ const CheckoutContent = () => {
     setPaymentMethod(methodId);
   };
 
-  // Handle form submission wrapper for OrderSummary
-  const onSubmitWrapper = async (e: React.FormEvent) => {
-    e.preventDefault();
-    await submitOrder();
-  };
-
   if (items.length === 0) {
     return (
       <div className="text-center py-8">
@@ -169,7 +162,7 @@ const CheckoutContent = () => {
       
       <div className="lg:col-span-2">
         <OrderSummary 
-          onSubmit={onSubmitWrapper}
+          onSubmit={handleSubmit(submitOrder)}
           currentStep={currentStep}
           canProceed={currentStep === 2 && !!paymentMethod}
         />
