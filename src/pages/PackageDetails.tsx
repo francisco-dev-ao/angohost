@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import Layout from '@/components/Layout';
@@ -11,7 +10,7 @@ import { Package, Cpu, Server, HardDrive, Clock, CheckCircle } from 'lucide-reac
 import { useCart } from '@/contexts/CartContext';
 import { toast } from 'sonner';
 import { v4 as uuidv4 } from 'uuid';
-import DomainSearchSection from '@/components/home/DomainSearchSection';
+import DomainValidator from '@/components/DomainValidator';
 
 interface PackageFeature {
   text: string;
@@ -422,7 +421,7 @@ const PackageDetails = () => {
               
               {domainOption === 'new' && (
                 <div className="border p-4 rounded-md">
-                  <DomainSearchSection onDomainSelected={handleDomainSelected} />
+                  <DomainValidator onDomainValidated={handleDomainSelected} />
                 </div>
               )}
               
