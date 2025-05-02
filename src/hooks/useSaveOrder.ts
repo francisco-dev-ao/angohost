@@ -31,6 +31,9 @@ export const useSaveOrder = () => {
     try {
       setIsSaving(true);
       
+      // Limpar e formatar o valor total
+      const totalAmount = parseFloat(total.toString());
+      
       // Generate order number
       const orderNumber = `ORD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
@@ -40,8 +43,8 @@ export const useSaveOrder = () => {
         .insert({
           order_number: orderNumber,
           user_id: user.id,
-          total_amount: total,
-          items: JSON.stringify(items), // Convert items to JSON string
+          total_amount: totalAmount,
+          items: items, // Já está no formato correto para JSONB
           status: 'pending',
           payment_method: options.paymentMethodId,
           payment_status: options.skipPayment ? 'pending_invoice' : 'pending',
@@ -145,8 +148,8 @@ export const useSaveOrder = () => {
       const serviceType = mapToValidServiceType(item);
       const serviceDescription = item.description || '';
       
-      // Use correct property names based on the database schema
-      await supabase.from('client_services').insert({
+      // Preparar payload do serviço
+      const serviceData = {
         user_id: userId,
         service_type: serviceType,
         description: serviceDescription,
@@ -155,7 +158,9 @@ export const useSaveOrder = () => {
         price_monthly: item.price / 12, // Estimate monthly price
         price_yearly: item.price,
         name: item.name || item.title || 'Serviço'
-      });
+      };
+      
+      await supabase.from('client_services').insert(serviceData);
     } catch (error) {
       console.error('Error processing service:', error);
     }
