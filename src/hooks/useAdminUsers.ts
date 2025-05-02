@@ -112,11 +112,19 @@ export const useAdminUsers = () => {
 
   const deleteUser = async (userId: string) => {
     try {
-      // This will only work if the current user has admin privileges
-      // Typically you would need an admin API or edge function for this
-      const { error } = await supabase.auth.admin.deleteUser(userId);
+      // First, delete the user from Supabase Auth
+      const { error: authError } = await supabase.auth.admin.deleteUser(userId);
 
-      if (error) throw error;
+      if (authError) {
+        console.error('Error deleting user from auth:', authError);
+        // If we can't delete from auth directly, try deleting profile first
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .delete()
+          .eq('id', userId);
+
+        if (profileError) throw profileError;
+      }
       
       toast.success('Usuário excluído com sucesso');
       fetchUsers(); // Reload users
@@ -128,6 +136,27 @@ export const useAdminUsers = () => {
 
   useEffect(() => {
     fetchUsers();
+    
+    // Set up realtime subscription for user updates
+    const usersChannel = supabase
+      .channel('admin-users-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'profiles'
+        },
+        () => {
+          console.log('Users updated in real-time');
+          fetchUsers();
+        }
+      )
+      .subscribe();
+      
+    return () => {
+      supabase.removeChannel(usersChannel);
+    };
   }, []);
 
   return { 

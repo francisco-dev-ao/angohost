@@ -13,6 +13,7 @@ export const useAdminRealtimeListeners = () => {
           table: 'orders'
         },
         () => {
+          console.log('Orders updated in real-time');
           onDataChange();
         }
       )
@@ -28,6 +29,7 @@ export const useAdminRealtimeListeners = () => {
           table: 'invoices'
         },
         () => {
+          console.log('Invoices updated in real-time');
           onDataChange();
         }
       )
@@ -43,6 +45,7 @@ export const useAdminRealtimeListeners = () => {
           table: 'payment_methods'
         },
         () => {
+          console.log('Payment methods updated in real-time');
           onDataChange();
         }
       )
@@ -58,6 +61,23 @@ export const useAdminRealtimeListeners = () => {
           table: 'profiles'
         },
         () => {
+          console.log('User profiles updated in real-time');
+          onDataChange();
+        }
+      )
+      .subscribe();
+
+    const settingsChannel = supabase
+      .channel('admin-dashboard-settings')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'admin_settings'
+        },
+        () => {
+          console.log('Admin settings updated in real-time');
           onDataChange();
         }
       )
@@ -67,7 +87,8 @@ export const useAdminRealtimeListeners = () => {
       ordersChannel, 
       invoicesChannel, 
       paymentMethodsChannel,
-      usersChannel 
+      usersChannel,
+      settingsChannel
     };
   };
 

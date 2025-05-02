@@ -3,12 +3,14 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { Domain, Service } from '@/types/client';
+import { toast } from 'sonner';
 
 export const useRealtimeClientDashboard = () => {
   const { user } = useSupabaseAuth();
   const [services, setServices] = useState<Service[]>([]);
   const [domains, setDomains] = useState<Domain[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currencyFormat, setCurrencyFormat] = useState('.');
 
   const fetchDashboardData = async () => {
     if (!user) return;
@@ -17,10 +19,27 @@ export const useRealtimeClientDashboard = () => {
       setLoading(true);
       await Promise.all([
         fetchServices(),
-        fetchDomains()
+        fetchDomains(),
+        fetchCurrencyFormat()
       ]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchCurrencyFormat = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('admin_settings')
+        .select('settings')
+        .eq('id', 'general_settings')
+        .single();
+      
+      if (!error && data && data.settings && data.settings.currencyFormat) {
+        setCurrencyFormat(data.settings.currencyFormat);
+      }
+    } catch (error) {
+      console.error('Error fetching currency format:', error);
     }
   };
 
@@ -137,14 +156,16 @@ export const useRealtimeClientDashboard = () => {
     if (user) {
       fetchDashboardData();
       
+      // Set up a real-time subscription to multiple tables
       const channel = supabase
-        .channel('client-dashboard')
+        .channel('client-dashboard-realtime')
         .on('postgres_changes', { 
           event: '*', 
           schema: 'public', 
           table: 'client_services',
           filter: `user_id=eq.${user.id}`
         }, () => {
+          console.log('Client services changed, refreshing...');
           fetchServices();
         })
         .on('postgres_changes', { 
@@ -153,7 +174,17 @@ export const useRealtimeClientDashboard = () => {
           table: 'client_domains',
           filter: `user_id=eq.${user.id}`
         }, () => {
+          console.log('Client domains changed, refreshing...');
           fetchDomains();
+        })
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: 'admin_settings',
+          filter: `id=eq.general_settings`
+        }, () => {
+          console.log('Admin settings changed, refreshing currency format...');
+          fetchCurrencyFormat();
         })
         .subscribe();
         
@@ -167,6 +198,7 @@ export const useRealtimeClientDashboard = () => {
     services,
     domains,
     loading,
+    currencyFormat,
     fetchDashboardData,
     fetchServices,
     fetchDomains
