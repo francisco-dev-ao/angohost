@@ -143,18 +143,18 @@ export const useSaveOrder = () => {
       
       // Map service type to known service types
       const serviceType = mapToValidServiceType(item);
-      const serviceName = item.name || item.title || 'Serviço';
       const serviceDescription = item.description || '';
       
+      // Use correct property names based on the database schema
       await supabase.from('client_services').insert({
-        name: serviceName,
+        user_id: userId,
         service_type: serviceType,
         description: serviceDescription,
         status: 'pending',
         renewal_date: renewalDate.toISOString(),
         price_monthly: item.price / 12, // Estimate monthly price
         price_yearly: item.price,
-        user_id: userId
+        name: item.name || item.title || 'Serviço'
       });
     } catch (error) {
       console.error('Error processing service:', error);

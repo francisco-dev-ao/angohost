@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -5,8 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { ListBullet, CheckCircle, ShieldCheck, PiggyBank, Calendar, AlertCircle } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
+import { CheckCircle, ShieldCheck, PiggyBank, Calendar, AlertCircle, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { useCart } from '@/contexts/CartContext';
 import { formatPrice } from '@/utils/formatters';
 import AdditionalProducts from '@/components/AdditionalProducts';
@@ -67,9 +68,8 @@ const CpanelHosting = () => {
   const [selectedPlan, setSelectedPlan] = useState<any | null>(null);
   const [currentDomain, setCurrentDomain] = useState('');
   const [ownDomainChecked, setOwnDomainChecked] = useState(false);
-	const [domainYears, setDomainYears] = useState<number | null>(1);
+  const [domainYears, setDomainYears] = useState<number | null>(1);
   const navigate = useNavigate();
-  const { toast } = useToast();
   const { addToCart } = useCart();
   const { checkAvailability, availability, loading } = useDomainAvailability();
   const [domainPrice, setDomainPrice] = useState(2000);
@@ -94,7 +94,7 @@ const CpanelHosting = () => {
     setOwnDomainChecked(e.target.checked);
   };
 
-	const handleDomainYearsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleDomainYearsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setDomainYears(parseInt(e.target.value));
   };
 
@@ -113,7 +113,10 @@ const CpanelHosting = () => {
       domain: domainName
     });
     
-    toast.success(`Plano ${plan.title} adicionado ao carrinho!`);
+    toast(`Plano ${plan.title} adicionado ao carrinho!`, {
+      description: "Você pode modificar suas escolhas no carrinho.",
+    });
+    
     setSelectedPlan(null);
   };
 
@@ -148,7 +151,10 @@ const CpanelHosting = () => {
       });
     }
     
-    toast.success(`Plano ${plan.title} com domínio adicionado ao carrinho!`);
+    toast(`Plano ${plan.title} com domínio adicionado ao carrinho!`, {
+      description: "Prossiga para o carrinho para finalizar sua compra."
+    });
+    
     navigate('/cart');
   };
 
@@ -201,7 +207,14 @@ const CpanelHosting = () => {
                 onChange={(e) => setCurrentDomain(e.target.value)}
               />
               <Button onClick={handleDomainSearch} disabled={loading}>
-                {loading ? 'Verificando...' : 'Verificar'}
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Verificando...
+                  </>
+                ) : (
+                  "Verificar"
+                )}
               </Button>
             </div>
             {availability && (
