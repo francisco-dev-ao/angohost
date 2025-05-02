@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import Layout from '@/components/Layout';
@@ -12,6 +11,29 @@ import { useCart } from '@/contexts/CartContext';
 import { toast } from 'sonner';
 import { v4 as uuidv4 } from 'uuid';
 import DomainValidator from '@/components/DomainValidator';
+
+interface HostingPlan {
+  title: string;
+  description: string;
+  basePrice: number;
+  popular?: boolean;
+  specs: {
+    cpu: string;
+    ram: string;
+    storage: string;
+    bandwidth: string;
+  };
+  features: {
+    text: string;
+    included: boolean;
+  }[];
+}
+
+interface HostingPlansType {
+  [key: string]: {
+    [key: string]: HostingPlan;
+  };
+}
 
 const HostingDetails = () => {
   const { planSlug } = useParams();
@@ -28,7 +50,7 @@ const HostingDetails = () => {
   const { addToCart } = useCart();
   
   // Dados de planos de hospedagem (em uma situação real, estes dados viriam de uma API)
-  const hostingPlans = {
+  const hostingPlans: HostingPlansType = {
     'shared': {
       'básico': {
         title: "Básico",
@@ -215,24 +237,24 @@ const HostingDetails = () => {
   const normalizedPlanSlug = planSlug?.toLowerCase();
   
   // Busca o plano com base no tipo e slug
-  const findPlan = () => {
+  const findPlan = (): HostingPlan | null => {
     if (!normalizedPlanSlug || !hostingType) return null;
     
-    const plansOfType = hostingPlans[hostingType as keyof typeof hostingPlans];
+    const plansOfType = hostingPlans[hostingType];
     if (!plansOfType) return null;
     
     // Tenta encontrar o plano pelo slug exato
-    if (plansOfType[normalizedPlanSlug as keyof typeof plansOfType]) {
-      return plansOfType[normalizedPlanSlug as keyof typeof plansOfType];
+    if (plansOfType[normalizedPlanSlug]) {
+      return plansOfType[normalizedPlanSlug];
     }
     
     // Se não encontrar, tenta encontrar pelo título normalizado
     const planKey = Object.keys(plansOfType).find(key => {
-      const plan = plansOfType[key as keyof typeof plansOfType];
+      const plan = plansOfType[key];
       return plan.title.toLowerCase().replace(/\s+/g, '-') === normalizedPlanSlug;
     });
     
-    return planKey ? plansOfType[planKey as keyof typeof plansOfType] : null;
+    return planKey ? plansOfType[planKey] : null;
   };
   
   const plan = findPlan();
