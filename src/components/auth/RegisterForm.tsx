@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -29,7 +29,13 @@ export function RegisterForm({ onSubmit, isLoading }: RegisterFormProps) {
     setNifError('');
     
     try {
+      // Usando API pública de consulta NIF/BI
       const response = await fetch(`https://consulta.edgarsingui.ao/public/consultar-por-nif/${nif}`);
+      
+      if (!response.ok) {
+        throw new Error(`Erro HTTP: ${response.status}`);
+      }
+      
       const data = await response.json();
       
       if (data.data && data.data.success) {
@@ -66,6 +72,13 @@ export function RegisterForm({ onSubmit, isLoading }: RegisterFormProps) {
       return;
     }
     
+    // Validate email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      toast.error('Por favor, insira um endereço de e-mail válido.');
+      return;
+    }
+    
     // Validate phone number
     const phoneRegex = /^9\d{8}$/;
     if (!phoneRegex.test(phone)) {
@@ -73,7 +86,17 @@ export function RegisterForm({ onSubmit, isLoading }: RegisterFormProps) {
       return;
     }
     
-    await onSubmit(email, password, fullName);
+    // Validate password strength
+    if (password.length < 6) {
+      toast.error('A senha deve ter pelo menos 6 caracteres.');
+      return;
+    }
+    
+    try {
+      await onSubmit(email, password, fullName);
+    } catch (error) {
+      console.error('Erro ao registrar:', error);
+    }
   };
 
   return (
@@ -159,8 +182,6 @@ export function RegisterForm({ onSubmit, isLoading }: RegisterFormProps) {
             value={phone}
             onChange={handlePhoneChange}
             required
-            pattern="9[0-9]{8}"
-            maxLength={9}
           />
           <p className="text-sm text-gray-500">O número deve ter 9 dígitos e começar com 9</p>
         </div>

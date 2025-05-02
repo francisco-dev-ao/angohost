@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { toast } from 'sonner';
@@ -20,7 +20,6 @@ export default function Register() {
   
   useEffect(() => {
     if (user) {
-      toast.success('Você já está logado');
       navigate(returnUrl);
     }
   }, [user, navigate, returnUrl]);
@@ -29,11 +28,10 @@ export default function Register() {
     setIsLoggingIn(true);
     try {
       await signIn(email, password);
-      toast.success('Login realizado com sucesso');
       navigate(returnUrl);
     } catch (error) {
       console.error('Login error:', error);
-      toast.error('Erro ao realizar login');
+      // Toast error é tratado no hook
     } finally {
       setIsLoggingIn(false);
     }
@@ -43,11 +41,11 @@ export default function Register() {
     setIsRegistering(true);
     try {
       await signUp(email, password, fullName);
-      toast.success('Cadastro realizado com sucesso');
-      navigate(returnUrl);
-    } catch (error) {
+      toast.success('Cadastro realizado com sucesso! Você pode fazer login agora.');
+      setTab('login');
+    } catch (error: any) {
       console.error('Registration error:', error);
-      toast.error('Erro ao realizar cadastro');
+      // Toast error é tratado no hook
     } finally {
       setIsRegistering(false);
     }

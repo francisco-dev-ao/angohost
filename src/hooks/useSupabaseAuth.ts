@@ -2,37 +2,18 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { User, Session } from '@supabase/supabase-js';
 
 export const useSupabaseAuth = () => {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Verificar autenticação atual ao carregar
-    const checkCurrentUser = async () => {
-      try {
-        setLoading(true);
-        const { data: { user }, error } = await supabase.auth.getUser();
-        
-        if (error) {
-          console.error('Erro ao verificar usuário:', error);
-          throw error;
-        }
-        
-        setUser(user);
-      } catch (error) {
-        console.error('Erro na verificação de autenticação:', error);
-        // Não exibir toast aqui para não interromper a experiência do usuário
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    checkCurrentUser();
-
-    // Configurar listener para mudanças na autenticação
-    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+    // Configurar listener para mudanças na autenticação primeiro
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       console.log('Evento de autenticação:', event);
+      setSession(session);
       setUser(session?.user || null);
       
       // Atualizar localStorage para compatibilidade com o código existente
@@ -43,8 +24,31 @@ export const useSupabaseAuth = () => {
       }
     });
 
+    // Depois verificar autenticação atual
+    const checkCurrentUser = async () => {
+      try {
+        setLoading(true);
+        const { data, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Erro ao verificar usuário:', error);
+          return;
+        }
+        
+        setSession(data.session);
+        setUser(data.session?.user || null);
+      } catch (error) {
+        console.error('Erro na verificação de autenticação:', error);
+        // Não exibir toast aqui para não interromper a experiência do usuário
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkCurrentUser();
+
     return () => {
-      authListener?.subscription.unsubscribe();
+      subscription?.unsubscribe();
     };
   }, []);
 
@@ -59,6 +63,7 @@ export const useSupabaseAuth = () => {
       if (error) throw error;
       
       setUser(data.user);
+      setSession(data.session);
       toast.success('Login realizado com sucesso!');
       return data.user;
     } catch (error: any) {
@@ -91,7 +96,7 @@ export const useSupabaseAuth = () => {
       if (data.user) {
         const { error: profileError } = await supabase
           .from('profiles')
-          .upsert({ 
+          .insert({ 
             id: data.user.id, 
             email: email,
             full_name: fullName,
@@ -106,6 +111,7 @@ export const useSupabaseAuth = () => {
       }
       
       setUser(data.user);
+      setSession(data.session);
       toast.success('Cadastro realizado com sucesso!');
       return data.user;
     } catch (error: any) {
@@ -144,6 +150,7 @@ export const useSupabaseAuth = () => {
       if (error) throw error;
       
       setUser(null);
+      setSession(null);
       localStorage.removeItem('auth_user');
       toast.success('Sessão encerrada com sucesso');
     } catch (error: any) {
@@ -156,6 +163,7 @@ export const useSupabaseAuth = () => {
 
   return {
     user,
+    session,
     loading,
     signIn: handleSignIn,
     signUp: handleSignUp,
