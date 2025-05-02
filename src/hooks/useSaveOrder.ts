@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
@@ -65,23 +66,31 @@ export const useSaveOrder = () => {
         }
       }
       
+      // Properly format client details to avoid JSON parsing issues
+      const clientDetails = orderData?.clientDetails ? 
+        JSON.stringify(orderData.clientDetails) : 
+        null;
+      
+      // Format items to ensure they're a valid JSON array and not a string
+      const formattedItems = items.map(item => ({
+        name: item.title,
+        quantity: item.quantity,
+        price: item.price,
+        type: item.type || 'product',
+        domain: item.domain || null
+      }));
+      
       const { data: order, error } = await supabase
         .from('orders')
         .insert({
           order_number: orderNumber,
           user_id: user.id,
           status: orderData?.skipPayment ? 'processing' : 'pending',
-          items: items.map(item => ({
-            name: item.title,
-            quantity: item.quantity,
-            price: item.price,
-            type: item.type || 'product',
-            domain: item.domain || null
-          })),
+          items: formattedItems,
           total_amount: totalAmount,
           payment_status: orderData?.skipPayment ? 'pending_invoice' : 'pending',
           payment_method: paymentMethodValue,
-          client_details: orderData?.clientDetails || null
+          client_details: clientDetails
         })
         .select()
         .single();

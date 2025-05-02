@@ -1,207 +1,213 @@
 
 import React, { useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { useNavigate } from 'react-router-dom';
 import { useClientDashboard } from '@/hooks/useClientDashboard';
+import { Badge } from '@/components/ui/badge';
 import { Domain, Service } from '@/types/client';
 import { Skeleton } from '@/components/ui/skeleton';
-import { formatDateShort } from '@/utils/formatters';
+import { formatDate } from '@/utils/formatters';
 
 const ClientDashboard = () => {
   const navigate = useNavigate();
-  const { 
-    services, 
-    domains, 
-    loading, 
-    fetchDashboardData,
-    // Make sure these values exist or provide default values
-    activeServices = [],
-    pendingInvoices = [],
-    openTickets = [],
-    notifications = [],
-    domains_list = domains
+  const {
+    dashboardData,
+    isLoading,
+    error
   } = useClientDashboard();
 
   useEffect(() => {
-    fetchDashboardData();
-  }, []);
-
-  const renderDomainsSection = () => {
-    if (loading) {
-      return (
-        <div className="space-y-4">
-          <Skeleton className="h-14" />
-          <Skeleton className="h-14" />
-          <Skeleton className="h-14" />
-        </div>
-      );
+    if (dashboardData) {
+      console.log('Dashboard data loaded:', dashboardData);
     }
+  }, [dashboardData]);
 
-    if (!domains_list || domains_list.length === 0) {
-      return (
-        <div className="text-center py-8">
-          <p className="text-muted-foreground mb-4">Você ainda não possui domínios registrados.</p>
-          <Button onClick={() => navigate('/domains')}>
-            Registrar Domínio
-          </Button>
-        </div>
-      );
-    }
-
+  if (isLoading) {
     return (
-      <div className="space-y-3">
-        {domains_list.slice(0, 3).map((domain: Domain) => (
-          <div key={domain.id} className="flex items-center justify-between p-3 border rounded-md">
-            <div>
-              <p className="font-medium">{domain.name}</p>
-              <p className="text-sm text-muted-foreground">
-                Expira em: {formatDateShort(domain.expiry_date)}
-              </p>
-            </div>
-            <Badge variant={domain.status === 'active' ? 'outline' : 'secondary'}>
-              {domain.status === 'active' ? 'Ativo' : domain.status}
-            </Badge>
-          </div>
+      <div className="space-y-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Card key={i} className="col-span-1">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">
+                  <Skeleton className="h-4 w-24" />
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  <Skeleton className="h-8 w-16" />
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        
+        {[1, 2].map((i) => (
+          <Card key={i}>
+            <CardHeader>
+              <CardTitle><Skeleton className="h-6 w-40" /></CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Skeleton className="h-24 w-full" />
+            </CardContent>
+          </Card>
         ))}
       </div>
     );
-  };
+  }
 
-  const renderServicesSection = () => {
-    if (loading) {
-      return (
-        <div className="space-y-4">
-          <Skeleton className="h-14" />
-          <Skeleton className="h-14" />
-        </div>
-      );
-    }
-
-    if (services.length === 0) {
-      return (
-        <div className="text-center py-8">
-          <p className="text-muted-foreground mb-4">Você não possui serviços ativos.</p>
-          <Button onClick={() => navigate('/cpanel-hosting')}>
-            Contratar Hospedagem
-          </Button>
-        </div>
-      );
-    }
-
+  if (error) {
     return (
-      <div className="space-y-3">
-        {services.slice(0, 3).map((service: Service) => (
-          <div key={service.id} className="flex items-center justify-between p-3 border rounded-md">
-            <div>
-              <p className="font-medium">{service.name}</p>
-              <p className="text-sm text-muted-foreground">
-                {service.type} - {formatDateShort(service.renewal_date)}
-              </p>
-            </div>
-            <Badge variant={service.status === 'active' ? 'outline' : 'secondary'}>
-              {service.status === 'active' ? 'Ativo' : service.status}
-            </Badge>
-          </div>
-        ))}
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Erro ao carregar dashboard</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p>Ocorreu um erro ao carregar os dados do dashboard. Por favor, tente novamente mais tarde.</p>
+          <Button onClick={() => window.location.reload()} className="mt-4">Tentar novamente</Button>
+        </CardContent>
+      </Card>
     );
-  };
-
+  }
+  
+  // Make sure we have a valid array for domains, services, invoices, and orders
+  const domains = Array.isArray(dashboardData?.domains) ? dashboardData.domains : [];
+  const services = Array.isArray(dashboardData?.services) ? dashboardData.services : [];
+  const invoices = Array.isArray(dashboardData?.invoices) ? dashboardData.invoices : [];
+  const orders = Array.isArray(dashboardData?.orders) ? dashboardData.orders : [];
+  
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+        <Card className="col-span-1">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Serviços Ativos</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Domínios
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{activeServices ? activeServices.length : 0}</div>
+            <div className="text-2xl font-bold">
+              {domains.length}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Total de domínios registrados
+            </p>
           </CardContent>
-          <CardFooter>
-            <Button variant="ghost" size="sm" className="w-full" onClick={() => navigate('/client/services')}>
-              Ver todos
-            </Button>
-          </CardFooter>
         </Card>
         
-        <Card>
+        <Card className="col-span-1">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Faturas Pendentes</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Serviços
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{pendingInvoices ? pendingInvoices.length : 0}</div>
+            <div className="text-2xl font-bold">
+              {services.length}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Total de serviços ativos
+            </p>
           </CardContent>
-          <CardFooter>
-            <Button variant="ghost" size="sm" className="w-full" onClick={() => navigate('/client/invoices')}>
-              Ver todas
-            </Button>
-          </CardFooter>
         </Card>
         
-        <Card>
+        <Card className="col-span-1">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Tickets Abertos</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Faturas
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{openTickets ? openTickets.length : 0}</div>
+            <div className="text-2xl font-bold">
+              {invoices.length}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Faturas emitidas
+            </p>
           </CardContent>
-          <CardFooter>
-            <Button variant="ghost" size="sm" className="w-full" onClick={() => navigate('/client/support')}>
-              Ver todos
-            </Button>
-          </CardFooter>
         </Card>
         
-        <Card>
+        <Card className="col-span-1">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Notificações</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Pedidos
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{notifications ? notifications.length : 0}</div>
+            <div className="text-2xl font-bold">
+              {orders.length}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Total de pedidos
+            </p>
           </CardContent>
-          <CardFooter>
-            <Button variant="ghost" size="sm" className="w-full" onClick={() => navigate('/client/notifications')}>
-              Ver todas
-            </Button>
-          </CardFooter>
         </Card>
       </div>
-
-      <div className="grid gap-6 md:grid-cols-2">
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Meus Domínios</CardTitle>
-            <CardDescription>
-              Gerencie seus domínios registrados
-            </CardDescription>
+            <Button variant="outline" size="sm" onClick={() => navigate('/client/domains')}>
+              Ver todos
+            </Button>
           </CardHeader>
           <CardContent>
-            {renderDomainsSection()}
+            {domains.length > 0 ? (
+              <div className="space-y-2">
+                {domains.slice(0, 5).map((domain) => (
+                  <div key={domain.id} className="flex justify-between items-center p-2 border-b">
+                    <div>
+                      <p className="font-medium">{domain.domain}</p>
+                      <p className="text-sm text-muted-foreground">Expira em: {formatDate(domain.expires_at || '')}</p>
+                    </div>
+                    <Badge variant={domain.status === 'active' ? 'default' : domain.status === 'pending' ? 'outline' : 'destructive'}>
+                      {domain.status === 'active' ? 'Ativo' : domain.status === 'pending' ? 'Pendente' : 'Expirado'}
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-6">
+                <p className="text-muted-foreground">Nenhum domínio registrado</p>
+                <Button className="mt-2" onClick={() => navigate('/domains')}>Registrar domínio</Button>
+              </div>
+            )}
           </CardContent>
-          <CardFooter>
-            <Button variant="outline" className="w-full" onClick={() => navigate('/client/domains')}>
-              Ver todos os domínios
-            </Button>
-          </CardFooter>
         </Card>
-
+        
         <Card>
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Meus Serviços</CardTitle>
-            <CardDescription>
-              Gerencie suas hospedagens e email
-            </CardDescription>
+            <Button variant="outline" size="sm" onClick={() => navigate('/client/services')}>
+              Ver todos
+            </Button>
           </CardHeader>
           <CardContent>
-            {renderServicesSection()}
+            {services.length > 0 ? (
+              <div className="space-y-2">
+                {services.slice(0, 5).map((service) => (
+                  <div key={service.id} className="flex justify-between items-center p-2 border-b">
+                    <div>
+                      <p className="font-medium">{service.name}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {service.service_type || 'Serviço'} - {formatDate(service.created_at || '')}
+                      </p>
+                    </div>
+                    <Badge variant={service.status === 'active' ? 'default' : service.status === 'pending' ? 'outline' : 'destructive'}>
+                      {service.status === 'active' ? 'Ativo' : service.status === 'pending' ? 'Pendente' : 'Suspenso'}
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-6">
+                <p className="text-muted-foreground">Nenhum serviço contratado</p>
+                <Button className="mt-2" onClick={() => navigate('/')}>Ver serviços disponíveis</Button>
+              </div>
+            )}
           </CardContent>
-          <CardFooter>
-            <Button variant="outline" className="w-full" onClick={() => navigate('/client/services')}>
-              Ver todos os serviços
-            </Button>
-          </CardFooter>
         </Card>
       </div>
     </div>

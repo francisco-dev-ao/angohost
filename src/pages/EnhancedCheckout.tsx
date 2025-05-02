@@ -6,7 +6,6 @@ import { useCart } from '@/contexts/CartContext';
 import { motion } from 'framer-motion';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import PromotionalBanner from '@/components/checkout/PromotionalBanner';
-import CountdownTimer from '@/components/checkout/CountdownTimer';
 import CheckoutSkeleton from '@/components/checkout/CheckoutSkeleton';
 import EmptyCartView from '@/components/checkout/EmptyCartView';
 import LoginPrompt from '@/components/checkout/LoginPrompt';
@@ -63,15 +62,6 @@ const EnhancedCheckoutPage = () => {
         transition={{ duration: 0.5 }}
       >
         <div className="container">
-          {items.length > 0 && (
-            <div className="mb-8">
-              <div className="grid grid-cols-1 gap-4">
-                <CountdownTimer initialMinutes={7} message="Não perca esta oferta!" />
-                <PromotionalBanner />
-              </div>
-            </div>
-          )}
-
           {!user && (
             <LoginPrompt 
               onLogin={openLoginDialog} 

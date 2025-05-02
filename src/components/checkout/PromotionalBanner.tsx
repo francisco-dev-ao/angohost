@@ -8,7 +8,7 @@ interface PromotionalBannerProps {
 }
 
 const PromotionalBanner = ({ 
-  message = "+ 3 meses grátis com plano de 48 meses", 
+  message = "Oferta por tempo limitado!",
   className = "",
   isSticky = false
 }: PromotionalBannerProps) => {

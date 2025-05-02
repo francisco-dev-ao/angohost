@@ -58,11 +58,6 @@ const CheckoutForm = ({ onSubmit, onComplete, loading: externalLoading }: Checko
       return;
     }
     
-    if (!skipPayment && !selectedPaymentMethod) {
-      toast.error('Selecione um método de pagamento');
-      return;
-    }
-    
     try {
       const orderData = {
         paymentMethodId: skipPayment ? null : selectedPaymentMethod,

@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useCheckoutProcess } from '@/hooks/useCheckoutProcess';
 import CheckoutAuth from './auth/CheckoutAuth';
 import CheckoutSuccess from './success/CheckoutSuccess';
@@ -9,11 +9,9 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ShoppingBag } from 'lucide-react';
 import CountdownTimer from './CountdownTimer';
-import PromotionalBanner from './PromotionalBanner';
 
 const EnhancedCheckout = () => {
   const navigate = useNavigate();
-  const [showStickyBanner, setShowStickyBanner] = useState(false);
   
   const {
     items,
@@ -26,18 +24,6 @@ const EnhancedCheckout = () => {
     handleAuthComplete,
     handleSubmitOrder
   } = useCheckoutProcess();
-
-  useEffect(() => {
-    const handleScroll = () => {
-      const scrollPosition = window.scrollY;
-      setShowStickyBanner(scrollPosition > 200);
-    };
-    
-    window.addEventListener('scroll', handleScroll);
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-    };
-  }, []);
 
   if (orderPlaced) {
     return <CheckoutSuccess />;
@@ -73,22 +59,12 @@ const EnhancedCheckout = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      {showStickyBanner && (
-        <PromotionalBanner isSticky={true} className="mb-6 shadow-md" />
-      )}
-      
       {items.length > 0 && (
         <div className="mb-6">
           <CountdownTimer 
             initialMinutes={15} 
-            message="Não perca esta oferta!" 
+            message="Oferta por tempo limitado!" 
           />
-        </div>
-      )}
-
-      {items.length > 0 && (
-        <div className="mb-6">
-          <PromotionalBanner />
         </div>
       )}
       

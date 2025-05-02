@@ -10,7 +10,7 @@ interface CountdownTimerProps {
 
 const CountdownTimer = ({ 
   initialMinutes = 15,
-  message = "Não perca esta oferta!",
+  message = "Oferta por tempo limitado!",
   className = ""
 }: CountdownTimerProps) => {
   const [timeLeft, setTimeLeft] = useState({

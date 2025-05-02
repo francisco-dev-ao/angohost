@@ -26,6 +26,18 @@ export const formatDate = (dateString: string): string => {
 };
 
 /**
+ * Format a date string to a shorter format (DD/MM/YYYY)
+ */
+export const formatDateShort = (dateString: string): string => {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('pt-AO', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
+};
+
+/**
  * Format bytes to human readable format
  */
 export const formatBytes = (bytes: number, decimals = 2): string => {
