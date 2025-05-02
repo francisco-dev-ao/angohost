@@ -8,6 +8,7 @@ import OrderSummary from './OrderSummary';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ShoppingBag } from 'lucide-react';
+import CountdownTimer from './CountdownTimer';
 
 const EnhancedCheckout = () => {
   const navigate = useNavigate();
@@ -57,6 +58,14 @@ const EnhancedCheckout = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
+      {items.length > 0 && (
+        <div className="mb-6">
+          <CountdownTimer 
+            initialMinutes={15} 
+            message="Não perca esta oferta!" 
+          />
+        </div>
+      )}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2">
           {authVisible ? (

@@ -14,6 +14,8 @@ import { LoginForm } from '@/components/auth/LoginForm';
 import { RegisterForm } from '@/components/auth/RegisterForm';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { toast } from 'sonner';
+import CountdownTimer from '@/components/checkout/CountdownTimer';
+import PromotionalBanner from '@/components/checkout/PromotionalBanner';
 
 const EnhancedCheckoutPage = () => {
   const navigate = useNavigate();
@@ -117,6 +119,15 @@ const EnhancedCheckoutPage = () => {
         transition={{ duration: 0.5 }}
       >
         <div className="container">
+          {items.length > 0 && (
+            <div className="mb-8">
+              <div className="grid grid-cols-1 gap-4">
+                <CountdownTimer initialMinutes={7} message="Não perca esta oferta!" />
+                <PromotionalBanner />
+              </div>
+            </div>
+          )}
+
           {!user ? (
             <div className="mb-8 p-6 border border-amber-200 bg-amber-50 rounded-lg">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">

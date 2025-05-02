@@ -35,12 +35,7 @@ export const useOrders = () => {
         payment_method: order.payment_method,
         // Map payment_status to one of the allowed values
         payment_status: mapPaymentStatus(order.payment_status),
-        client_details: order.client_details || {
-          name: '',
-          email: '',
-          phone: '',
-          address: ''
-        },
+        client_details: parseClientDetails(order.client_details),
         items: Array.isArray(order.items) ? order.items : [],
         invoice: order.invoices?.[0] ? {
           id: order.invoices[0].id,
@@ -61,6 +56,37 @@ export const useOrders = () => {
     if (status === 'paid') return 'paid';
     if (status === 'cancelled' || status === 'canceled') return 'cancelled';
     return 'pending';
+  };
+
+  // Helper function to parse client details from JSON
+  const parseClientDetails = (details: any): { name: string; email: string; phone: string; address: string } => {
+    if (!details) {
+      return { name: '', email: '', phone: '', address: '' };
+    }
+    
+    try {
+      // If it's already a string, parse it
+      if (typeof details === 'string') {
+        const parsed = JSON.parse(details);
+        return {
+          name: parsed.name || '',
+          email: parsed.email || '',
+          phone: parsed.phone || '',
+          address: parsed.address || ''
+        };
+      }
+      
+      // If it's already an object, format it
+      return {
+        name: details.name || '',
+        email: details.email || '',
+        phone: details.phone || '',
+        address: details.address || ''
+      };
+    } catch (e) {
+      // If parsing fails, return empty object
+      return { name: '', email: '', phone: '', address: '' };
+    }
   };
 
   useEffect(() => {
